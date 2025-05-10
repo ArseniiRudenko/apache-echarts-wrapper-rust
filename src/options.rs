@@ -25,11 +25,15 @@ pub struct EChartsOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub legend: Option<Legend>,
 
-    /// X axis options (Cartesian charts)
+    /// Dataset component for providing data
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dataset: Option<Vec<DatasetComponent>>,
+
+    /// X-axis options (Cartesian charts)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub x_axis: Option<Axis>,
 
-    /// Y axis options (Cartesian charts)
+    /// Y-axis options (Cartesian charts)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub y_axis: Option<Axis>,
 
@@ -307,6 +311,16 @@ pub enum SeriesType {
     Unknown,
 }
 
+/// Internal enum to represent the data source for a series
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all= "snake_case")]
+pub enum SeriesDataSource {
+    /// Direct data items
+    Data(Vec<DataItem>),
+    /// Reference to a dataset by index
+    DatasetIndex(usize),
+}
+
 /// Series definition
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -320,10 +334,69 @@ pub struct Series {
     pub name: Option<String>,
 
     /// Data array
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<Vec<DataItem>>,
+    #[serde(flatten)]
+    pub data: SeriesDataSource,
 
     /// Additional raw series options
+    #[serde(flatten)]
+    pub extra: Option<Value>,
+}
+
+/// Dataset component for providing and transforming data
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DatasetComponent {
+    /// Raw data source (array of arrays or objects)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<Vec<[DataValue; 2]>>,
+
+    /// Transform applied to this dataset
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transform: Option<DatasetTransform>,
+
+    /// Additional raw dataset options
+    #[serde(flatten)]
+    pub extra: Option<Value>,
+}
+
+/// Transform applied to a dataset
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DatasetTransform {
+    /// Transform type
+    pub r#type: String,
+
+    /// Transform configuration
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub config: Option<RegressionConfig>,
+
+    /// Additional raw transform options
+    #[serde(flatten)]
+    pub extra: Option<Value>,
+}
+
+/// Regression methods supported by ecStat
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum RegressionMethod {
+    Linear,
+    Exponential,
+    Logarithmic,
+    Polynomial,
+}
+
+/// Configuration for regression transforms
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RegressionConfig {
+    /// Regression method
+    pub method: RegressionMethod,
+
+    /// Polynomial order (only used when method is Polynomial)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<u32>,
+
+    /// Additional raw regression config options
     #[serde(flatten)]
     pub extra: Option<Value>,
 }
