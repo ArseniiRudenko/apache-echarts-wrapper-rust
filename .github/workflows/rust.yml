@@ -1,0 +1,95 @@
+# .github/workflows/semver-bump.yml
+name: Build, Test, Bump SemVer & Publish
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  build-test:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      head-ref: ${{ github.event.pull_request.head.ref }}
+      sha:       ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build with Cargo
+        run: cargo build --verbose
+
+      - name: Test with Cargo
+        run: cargo test --verbose
+
+  bump-version:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.build-test.sha }}
+
+      - name: Determine bump level
+        id: level
+        run: |
+          BRANCH="${{ needs.build-test.head-ref }}"
+          if [[ "$BRANCH" == release/* ]]; then
+            echo "::set-output name=level::major"
+          elif [[ "$BRANCH" == feature/* ]]; then
+            echo "::set-output name=level::minor"
+          else
+            echo "::set-output name=level::patch"
+          fi
+
+      - name: Read current version from Cargo.toml
+        id: read-version
+        run: |
+          VERSION=$(grep '^version' Cargo.toml \
+            | head -n1 \
+            | sed -E 's/version *= *"([^\"]+)"/\1/')
+          echo "::set-output name=current::$VERSION"
+
+      - name: Bump semver
+        id: bump
+        uses: actions-ecosystem/action-bump-semver@v1
+        with:
+          current_version: ${{ steps.read-version.outputs.current }}
+          level: ${{ steps.level.outputs.level }}
+
+      - name: Update Cargo.toml
+        run: |
+          NEW=${{ steps.bump.outputs.new_version }}
+          sed -i -E "s/^version *= *\"[0-9]+\.[0-9]+\.[0-9]+\"/version = \"$NEW\"/" Cargo.toml
+          git diff --stat
+
+      - name: Commit & push bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml
+          git commit -m "ci: bump version to ${{ steps.bump.outputs.new_version }} [skip ci]" || echo "No changes to commit"
+          git push
+
+      - name: Publish to crates.io
+        if: success()
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          echo "Publishing version ${{ steps.bump.outputs.new_version }} to crates.io"
+          cargo publish --verbose
+
+      - name: Announce new version
+        run: echo "✅ Version bumped and published as ${{ steps.bump.outputs.new_version }}"
