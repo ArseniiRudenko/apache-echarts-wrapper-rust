@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 use serde_json::json;
 use crate::options::{Axis, AxisType, DataItem, DataValue, DatasetComponent, DatasetTransform, EChartsOption, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title};
+use crate::templates::ScriptTemplate;
 
 /// Trait to determine an axis type and convert into DataValue
 pub trait AxisInfo {
@@ -199,8 +200,8 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
         self.add_regression_dataset(series_label, data, RegressionMethod::Logarithmic, None, SeriesType::Line)
     }
     
-    /// Build final EChartsOption, populating legend
-    pub fn build(self) -> EChartsOption {
-        self.option
+    /// Build renderable template
+    pub fn build(self, html_target_id:String) -> ScriptTemplate{
+        ScriptTemplate::new(html_target_id,self.option)
     }
 }
