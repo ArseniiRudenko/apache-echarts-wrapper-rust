@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 use serde_json::json;
-use crate::options::{Axis, AxisType, DataItem, DataValue, DatasetComponent, DatasetTransform, EChartsOption, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title};
+use uuid::Uuid;
+use crate::options::{Axis, AxisType, DataItem, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title};
 use crate::templates::ScriptTemplate;
 
 /// Trait to determine an axis type and convert into DataValue
@@ -95,12 +96,9 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
         let data_items: Vec<DataItem> =data.into_iter()
             .map(|(x, y)| DataItem::Pair([x.into_data_value(), y.into_data_value()]))
             .collect();
-        self.option.series.as_mut().unwrap().push(Series {
-            r#type: Some(series_type),
-            name: Some(series_label.to_string()),
-            data: SeriesDataSource::Data(data_items),
-            extra: None,
-        });
+        self.option.series.as_mut().unwrap().push(
+            Series::new(series_label,series_type,SeriesDataSource::Data(data_items))
+        );
         self
     }
 
@@ -147,7 +145,7 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
         datasets.push(DatasetComponent {
             source: None,
             transform: Some(DatasetTransform {
-                r#type: "ecStat:regression".to_string(),
+                r#type: DatasetTransformType::Regression,
                 config: Some(regression_config),
                 extra: None,
             }),
@@ -158,6 +156,8 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
         self.option.series.as_mut().unwrap().push(Series {
             r#type: Some(SeriesType::Scatter),
             name: Some(format!("{} (data)", series_label)),
+            smooth: None,
+            area_style: None,
             data: SeriesDataSource::DatasetIndex(source_index),
             extra: None,
         });
@@ -166,9 +166,10 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
         self.option.series.as_mut().unwrap().push(Series {
             r#type: Some(series_type),
             name: Some(format!("{} (regression)", series_label)),
+            smooth: Some(true),
+            area_style: None,
             data: SeriesDataSource::DatasetIndex(transform_index),
             extra: Some(json!({
-                "smooth": true,
                 "symbolSize": 0.1,
                 "symbol": "circle",
                 "label": { "show": true, "fontSize": 16 },
@@ -200,8 +201,9 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
         self.add_regression_dataset(series_label, data, RegressionMethod::Logarithmic, None, SeriesType::Line)
     }
     
+
     /// Build renderable template
-    pub fn build(self, html_target_id:String) -> ScriptTemplate{
-        ScriptTemplate::new(html_target_id,self.option)
+    pub fn build(self) -> ScriptTemplate{
+        ScriptTemplate::new(Uuid::new_v4().to_string(),self.option)
     }
 }

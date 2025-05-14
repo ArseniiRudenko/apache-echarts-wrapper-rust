@@ -2,7 +2,7 @@ use crate::options::EChartsOption;
 use sailfish::TemplateSimple;
 
 #[derive(TemplateSimple)]
-#[template(path = "script.stpl")]
+#[template(path = "chart.stpl")]
 pub struct ScriptTemplate{
     chart_target_id: String,
     options: EChartsOption
@@ -13,6 +13,23 @@ impl ScriptTemplate{
         Self {
             chart_target_id,
             options,
+        }
+    }
+}
+
+
+#[derive(TemplateSimple)]
+#[template(path = "one_page_chart.stpl")]
+pub struct OnePage<'a>{
+   title: &'a str,
+   body: &'a str
+}
+
+impl<'a> OnePage<'a> {
+    pub fn new(title: &'a str, body: &'a str) -> Self {
+        Self {
+            title,
+            body
         }
     }
 }

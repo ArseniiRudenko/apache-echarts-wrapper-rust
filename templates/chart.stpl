@@ -1,9 +1,7 @@
-<script type="text/javascript">
-    var echarts = require('echarts');
 
-    var ecStat = require('echarts-stat');
+<div id="<%= chart_target_id %>" style="width: 600px;height:400px;"></div>
+<script type="text/javascript">
     echarts.registerTransform(ecStat.transform.regression);
-    
     var chartDom = document.getElementById('<%= chart_target_id %>');
     var myChart = echarts.init(chartDom);
     var option;

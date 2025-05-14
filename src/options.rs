@@ -188,13 +188,30 @@ pub struct Grid {
     pub extra: Option<Value>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+enum TooltipTrigger {
+    Item,
+    Axis,
+    None
+}
+
 /// Tooltip component
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Tooltip {
+
+    pub show: bool,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub show_delay: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hide_delay: Option<i32>,
+
     /// Trigger mode: item, axis
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub trigger: Option<String>,
+    pub trigger: Option<TooltipTrigger>,
 
     /// Tooltip formatter template or callback
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -333,6 +350,12 @@ pub struct Series {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub smooth: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub area_style: Option<AreaStyle>,
+
     /// Data array
     #[serde(flatten)]
     pub data: SeriesDataSource,
@@ -341,6 +364,41 @@ pub struct Series {
     #[serde(flatten)]
     pub extra: Option<Value>,
 }
+
+impl Series {
+    pub(crate) fn new(name:&str, r#type: SeriesType, data: SeriesDataSource) -> Series {
+        Self{
+            r#type: Some(r#type),
+            name: Some(name.to_string()),
+            smooth: None,
+            area_style: None,
+            data,
+            extra: None,
+        }
+    }
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum AxisFillOrigin{
+    Auto,
+    Start,
+    End,
+    Number
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AreaStyle{
+    #[serde(skip_serializing_if = "Option::is_none")]
+    color: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    origin: Option<AxisFillOrigin>
+}
+
+
+
 
 /// Dataset component for providing and transforming data
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -356,7 +414,17 @@ pub struct DatasetComponent {
 
     /// Additional raw dataset options
     #[serde(flatten)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra: Option<Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum DatasetTransformType {
+    Filter,
+    Sort,
+    #[serde(rename = "ecStat:regression")]
+    Regression
 }
 
 /// Transform applied to a dataset
@@ -364,7 +432,7 @@ pub struct DatasetComponent {
 #[serde(rename_all = "camelCase")]
 pub struct DatasetTransform {
     /// Transform type
-    pub r#type: String,
+    pub r#type: DatasetTransformType,
 
     /// Transform configuration
     #[serde(skip_serializing_if = "Option::is_none")]
