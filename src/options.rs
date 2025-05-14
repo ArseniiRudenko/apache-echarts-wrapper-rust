@@ -2,8 +2,9 @@
 //! This module provides strongly-typed structs for commonly used configuration options.
 //! Extend as needed for additional ECharts features.
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::common::Percent;
 
 /// Root object for ECharts configuration
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -54,31 +55,13 @@ pub enum PositionKeyword {
     Right,
     Top,
     Bottom,
+    Middle,
     Center,
+    Auto
 }
 
-/// Newtype for percentage values, serialized as "{value}%"
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Percent(pub f64);
 
-impl Serialize for Percent {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer {
-        let s = format!("{}%", self.0);
-        serializer.serialize_str(&s)
-    }
-}
 
-impl<'de> Deserialize<'de> for Percent {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: Deserializer<'de> {
-        let s = String::deserialize(deserializer)?;
-        let trimmed = s.trim_end_matches('%');
-        trimmed.parse::<f64>()
-            .map(Percent)
-            .map_err(serde::de::Error::custom)
-    }
-}
 
 /// Position enum supporting keyword, numeric px, percent, or other strings
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -89,9 +72,7 @@ pub enum Position {
     /// Numeric pixel value
     Number(f64),
     /// Percentage value (e.g., 50 => "50%")
-    Percent(Percent),
-    /// Arbitrary string (e.g., expressions)
-    Other(String),
+    Percent(Percent)
 }
 
 /// Title component
@@ -117,6 +98,14 @@ pub struct Title {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub top: Option<Position>,
 
+    /// Right position (Keyword, numeric px, percent, or other)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub right: Option<Position>,
+
+    /// Bottom position (Keyword, numeric px, percent, or other)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bottom: Option<Position>,
+
     /// Additional raw title options
     #[serde(flatten)]
     pub extra: Option<Value>,
@@ -130,6 +119,8 @@ impl Title {
             link: None,
             left: None,
             top: None,
+            right: None,
+            bottom: None,
             extra: None,
         }
     }
@@ -190,7 +181,7 @@ pub struct Grid {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-enum TooltipTrigger {
+pub enum TooltipTrigger {
     Item,
     Axis,
     None

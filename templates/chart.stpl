@@ -1,5 +1,5 @@
 
-<div id="<%= chart_target_id %>" style="width: 600px;height:400px;"></div>
+<div id="<%= chart_target_id %>" style="width: <%- width  %>;height:<%- height %>;"></div>
 <script type="text/javascript">
     echarts.registerTransform(ecStat.transform.regression);
     var chartDom = document.getElementById('<%= chart_target_id %>');

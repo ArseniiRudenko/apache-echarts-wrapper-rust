@@ -1,7 +1,9 @@
+use std::borrow::Cow;
 use std::marker::PhantomData;
 use serde_json::json;
 use uuid::Uuid;
-use crate::options::{Axis, AxisType, DataItem, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title};
+use crate::common::Size;
+use crate::options::{Axis, AxisType, DataItem, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title};
 use crate::templates::ScriptTemplate;
 
 /// Trait to determine an axis type and convert into DataValue
@@ -17,6 +19,17 @@ impl AxisInfo for i32 {
     fn axis_type() -> AxisType { AxisType::Value }
     fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
 }
+
+impl AxisInfo for u32 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
+}
+
+impl AxisInfo for u16 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
+}
+
 impl AxisInfo for i64 {
     fn axis_type() -> AxisType { AxisType::Value }
     fn into_data_value(self) -> DataValue { DataValue::Int(self) }
@@ -46,18 +59,12 @@ impl<'a> AxisInfo for &'a str {
     fn into_data_value(self) -> DataValue { DataValue::String(self.to_string()) }
 }
 
-/// Typed dataset with homogeneous X and Y types
-pub struct Dataset<X, Y> {
-    pub label: String,
-    pub values: Vec<(X, Y)>,
-}
 
 /// Builder for multi-line charts, inferring axis types from X and Y
 pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo> {
     option: EChartsOption,
     _marker: PhantomData<(X, Y)>,
 }
-
 
 impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
     /// Create a builder; axes set according to X::axis_type and Y::axis_type
@@ -73,9 +80,12 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
 
     /// Set chart title
     pub fn title_str(mut self, title: &str) -> Self {
-        self.option.title = Some(Title::new(title));
+        let mut title = Title::new(title);
+        title.left = Some(Position::Keyword(PositionKeyword::Center));
+        self.option.title = Some(title);
         self
     }
+    
     pub fn title(mut self, title: Title) -> Self {
         self.option.title = Some(title);
         self
@@ -200,10 +210,10 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
     pub fn add_logarithmic_regression(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
         self.add_regression_dataset(series_label, data, RegressionMethod::Logarithmic, None, SeriesType::Line)
     }
-    
+
 
     /// Build renderable template
-    pub fn build(self) -> ScriptTemplate{
-        ScriptTemplate::new(Uuid::new_v4().to_string(),self.option)
+    pub fn build(self, width: Size, height: Size) -> ScriptTemplate{
+        ScriptTemplate::new(Uuid::new_v4().to_string(),width,height,self.option)
     }
 }

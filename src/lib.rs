@@ -1,7 +1,7 @@
 mod options;
 mod builder;
 mod templates;
-
+mod common;
 
 #[cfg(test)]
 mod tests {
@@ -13,11 +13,12 @@ mod tests {
     use std::thread;
     use std::time::Duration;
     use tiny_http::{Header, Server};
+    use crate::common::Size;
 
     #[test]
     fn it_works() {
-
         let chart = ChartBuilder::<f64, &str>::new()
+            .title_str("Something interesting")
             .add_dataset(
                 "fist_set",
                 vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
@@ -27,7 +28,7 @@ mod tests {
                 vec![(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
                 ,SeriesType::Line
             )
-            .build();
+            .build(Size::pixels(600),Size::pixels(400));
 
         let body = chart.render_once().unwrap();
         // Generate your HTML string here
