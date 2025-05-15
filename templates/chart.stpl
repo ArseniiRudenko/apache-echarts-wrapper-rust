@@ -1,0 +1,10 @@
+
+<div id="<%= chart_target_id %>" style="width: <%- width  %>;height:<%- height %>;"></div>
+<script type="text/javascript">
+    echarts.registerTransform(ecStat.transform.regression);
+    var chartDom = document.getElementById('<%= chart_target_id %>');
+    var myChart = echarts.init(chartDom);
+    var option;
+    option =<%- options | json %>
+    option && myChart.setOption(option);
+</script>

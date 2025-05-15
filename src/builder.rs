@@ -1,38 +1,127 @@
+use crate::common::Size;
+use crate::options::{Axis, AxisPointer, AxisPointerType, AxisType, DataItem, DataPointSymbol, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title, Tooltip, TooltipTrigger};
+use crate::templates::ScriptTemplate;
 use std::marker::PhantomData;
-use serde_json::json;
-use crate::options::{Axis, AxisType, DataItem, DataValue, DatasetComponent, DatasetTransform, EChartsOption, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title};
+use uuid::Uuid;
 
-/// Trait to determine an axis type and convert into DataValue
+
 pub trait AxisInfo {
-    /// The axis type for this data type
     fn axis_type() -> AxisType;
-    /// Convert a value into DataValue
+
     fn into_data_value(self) -> DataValue;
+    
 }
 
-// Implement AxisInfo for common types
+///Trait that captures types that have AxisType as Value on the type level. 
+///That will catch and prevent user from trying to create regression charts on category data
+///(which is not supported but will not cause an error, instead the chart just won't render)
+pub trait ValueAxis : AxisInfo {}
+
+impl AxisInfo for u128 {
+
+    fn axis_type() -> AxisType { AxisType::Value }
+
+    fn into_data_value(self) -> DataValue { DataValue::U128(self) }
+    
+}
+
+impl ValueAxis for u128 {}
+
+impl AxisInfo for i128 {
+
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::I128(self) }
+}
+
+impl ValueAxis for i128 {}
+
+
 impl AxisInfo for i32 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
+
+    fn into_data_value(self) -> DataValue { DataValue::I32(self) }
 }
+
+impl ValueAxis for i32 {}
+
+impl AxisInfo for u32 {
+    fn axis_type() -> AxisType { AxisType::Value }
+
+    fn into_data_value(self) -> DataValue { DataValue::U32(self) }
+}
+
+impl ValueAxis for u32 {}
+
 impl AxisInfo for i64 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::Int(self) }
+
+    fn into_data_value(self) -> DataValue { DataValue::I64(self) }
 }
-impl AxisInfo for f64 {
+
+impl ValueAxis for i64 {}
+
+impl AxisInfo for u64 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::Float(self) }
+    fn into_data_value(self) -> DataValue { DataValue::U64(self) }
 }
+
+impl ValueAxis for u64 {}
+
+impl AxisInfo for i16 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::I16(self) }
+}
+
+impl ValueAxis for i16 {}
+
+impl AxisInfo for u16 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::U16(self) }
+}
+
+impl ValueAxis for u16 {}
+
+impl AxisInfo for i8 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::I8(self) }
+}
+
+impl ValueAxis for i8 {}
+
+impl AxisInfo for u8 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::U8(self) }
+}
+
+impl ValueAxis for u8 {}
 
 impl AxisInfo for f32 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::Float(self as f64) }
+    fn into_data_value(self) -> DataValue { DataValue::F32(self) }
 }
 
-impl AxisInfo for usize{
+impl ValueAxis for f32 {}
+
+impl AxisInfo for f64 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
+    fn into_data_value(self) -> DataValue { DataValue::F64(self) }
 }
+
+impl ValueAxis for f64 {}
+
+impl AxisInfo for usize {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::Usize(self) }
+}
+
+impl ValueAxis for usize {}
+
+impl AxisInfo for isize {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::Isize(self) }
+}
+
+impl ValueAxis for isize {}
 
 impl AxisInfo for String {
     fn axis_type() -> AxisType { AxisType::Category }
@@ -44,88 +133,67 @@ impl<'a> AxisInfo for &'a str {
     fn into_data_value(self) -> DataValue { DataValue::String(self.to_string()) }
 }
 
-/// Typed dataset with homogeneous X and Y types
-pub struct Dataset<X, Y> {
-    pub label: String,
-    pub values: Vec<(X, Y)>,
-}
+
 
 /// Builder for multi-line charts, inferring axis types from X and Y
-pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo> {
+pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo>
+{
     option: EChartsOption,
     _marker: PhantomData<(X, Y)>,
 }
 
-
-impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
-    /// Create a builder; axes set according to X::axis_type and Y::axis_type
-    pub fn new() -> Self {
-        let opt = EChartsOption {
-            title: None, tooltip: None, legend: None, grid: None, extra: None, dataset: None,
-            x_axis: Some(Axis { r#type: Some(X::axis_type()), name: None, data: None, extra: None }),
-            y_axis: Some(Axis { r#type: Some(Y::axis_type()), name: None, data: None, extra: None }),
-            series: Some(Vec::new()),
-        };
-        Self { option: opt, _marker: Default::default() }
-    }
-
-    /// Set chart title
-    pub fn title_str(mut self, title: &str) -> Self {
-        self.option.title = Some(Title::new(title));
-        self
-    }
-    pub fn title(mut self, title: Title) -> Self {
-        self.option.title = Some(title);
-        self
-    }
-
-    pub fn x_axis_label(mut self, x: &str) -> Self {
-        self.option.x_axis.get_or_insert_default().name = Some(x.to_string());
-        self
-    }
+///trait that provides regression methods that are only supported when both x and y are numeric
+pub trait RegressionChartBuilderExt<X, Y>: ChartBuilderExt<X, Y>
+where X: AxisInfo + ValueAxis,
+      Y: AxisInfo + ValueAxis
+{
     
-    pub fn y_axis_label(mut self, y: &str) -> Self {
-        self.option.y_axis.get_or_insert_default().name = Some(y.to_string());
-        self
+    fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
+        self.add_regression_dataset(data_source_index, RegressionMethod::Linear, None)
     }
 
-    /// Add a dataset; X and Y conversions ensure homogeneous types
-    pub fn add_dataset(mut self, series_label:&str, data: Vec<(X, Y)>, series_type: SeriesType) -> Self {
-        let data_items: Vec<DataItem> =data.into_iter()
-            .map(|(x, y)| DataItem::Pair([x.into_data_value(), y.into_data_value()]))
-            .collect();
-        self.option.series.as_mut().unwrap().push(Series {
-            r#type: Some(series_type),
-            name: Some(series_label.to_string()),
-            data: SeriesDataSource::Data(data_items),
-            extra: None,
-        });
-        self
+    fn add_polynomial_regression_dataset(self, data_source_index: usize, order: u32) -> usize {
+        self.add_regression_dataset(data_source_index, RegressionMethod::Polynomial, Some(order))
     }
+
+    fn add_exponential_regression_dataset(self, data_source_index: usize) -> usize {
+        self.add_regression_dataset(data_source_index, RegressionMethod::Exponential, None)
+    }
+
+    fn add_regression_dataset(mut self, data_source_index: usize, method: RegressionMethod, order: Option<u32>) -> usize {
+        let index = self.option().dataset.as_mut().unwrap().len();
+        let regression_config = RegressionConfig {
+            method: method.clone(),
+            order,
+            extra: None,
+        };
+        let dataset = DatasetTransform{
+            r#type: DatasetTransformType::Regression,
+            config: Some(regression_config),
+            extra: None,
+        };
+        self.option().dataset.as_mut().unwrap().push(DatasetComponent::tr(dataset, data_source_index));
+        index
+    }
+
 
     /// Add a dataset with regression transformation
-    fn add_regression_dataset(mut self, series_label: &str, data: Vec<(X, Y)>,
-                                  method: RegressionMethod, order: Option<u32>, 
-                                  series_type: SeriesType) -> Self {
+    fn add_regression_series(mut self, series_label: &str, data: Vec<(X, Y)>,
+                             method: RegressionMethod, order: Option<u32>) -> Self {
         // Create a dataset vector if it doesn't exist
-        if self.option.dataset.is_none() {
-            self.option.dataset = Some(Vec::new());
+        if self.option().dataset.is_none() {
+            self.option().dataset = Some(Vec::new());
         }
-        
+
         // Convert the data to a format suitable for ECharts
         let raw_data = data.into_iter()
             .map(|(x, y)| [x.into_data_value(), y.into_data_value()])
             .collect::<Vec<_>>();
-        
-        // Add source dataset
-        let datasets = self.option.dataset.as_mut().unwrap();
-        let source_index = datasets.len();
-        datasets.push(DatasetComponent {
-            source: Some(raw_data),
-            transform: None,
-            extra: None,
-        });
 
+        // Add source dataset
+        let datasets = self.option().dataset.as_mut().unwrap();
+        let source_index = datasets.len();
+        datasets.push(DatasetComponent::src(raw_data));
 
 
         // Add regression transform dataset
@@ -134,7 +202,6 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
             method: method.clone(),
             order: None,
             extra: None,
-
         };
 
         // Add polynomial order if provided and the method is polynomial
@@ -142,65 +209,182 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilder<X, Y> {
             regression_config.order = order;
         }
 
-        
-        datasets.push(DatasetComponent {
-            source: None,
-            transform: Some(DatasetTransform {
-                r#type: "ecStat:regression".to_string(),
+
+        datasets.push(DatasetComponent::tr(
+            DatasetTransform {
+                r#type: DatasetTransformType::Regression,
                 config: Some(regression_config),
-                extra: None,
-            }),
-            extra: None,
-        });
-        
+                extra: None
+            },
+            source_index
+        )
+        );
+
         // Add scatter series for original data
-        self.option.series.as_mut().unwrap().push(Series {
+        self.option().series.as_mut().unwrap().push(Series {
             r#type: Some(SeriesType::Scatter),
             name: Some(format!("{} (data)", series_label)),
+            smooth: None,
+            area_style: None,
             data: SeriesDataSource::DatasetIndex(source_index),
+            symbol: Some(DataPointSymbol::Circle),
+            symbol_size: Some(15),
             extra: None,
         });
-        
+
         // Add line series for regression
-        self.option.series.as_mut().unwrap().push(Series {
-            r#type: Some(series_type),
+        self.option().series.as_mut().unwrap().push(Series {
+            r#type: Some(SeriesType::Line),
             name: Some(format!("{} (regression)", series_label)),
+            smooth: Some(true),
+            area_style: None,
             data: SeriesDataSource::DatasetIndex(transform_index),
-            extra: Some(json!({
-                "smooth": true,
-                "symbolSize": 0.1,
-                "symbol": "circle",
-                "label": { "show": true, "fontSize": 16 },
-                "labelLayout": { "dx": -20 },
-                "encode": { "label": 2, "tooltip": 1 }
-            })),
+            symbol: Some(DataPointSymbol::None),
+            symbol_size: None,
+            extra: None
         });
-        
+
         self
     }
-    
+
     /// Add a linear regression dataset
-    pub fn add_linear_regression(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
-        self.add_regression_dataset(series_label, data, RegressionMethod::Linear, None, SeriesType::Line)
+    fn add_linear_regression_series(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
+        self.add_regression_series(series_label, data, RegressionMethod::Linear, None)
     }
-    
+
     /// Add a polynomial regression dataset
-    pub fn add_polynomial_regression(self, series_label: &str, data: Vec<(X, Y)>, order: u32) -> Self {
-        self.add_regression_dataset(series_label, data, RegressionMethod::Polynomial, Some(order), SeriesType::Line)
+    fn add_polynomial_regression_series(self, series_label: &str, data: Vec<(X, Y)>, order: u32) -> Self {
+        self.add_regression_series(series_label, data, RegressionMethod::Polynomial, Some(order))
     }
-    
+
     /// Add an exponential regression dataset
-    pub fn add_exponential_regression(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
-        self.add_regression_dataset(series_label, data, RegressionMethod::Exponential, None, SeriesType::Line)
+    fn add_exponential_regression_series(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
+        self.add_regression_series(series_label, data, RegressionMethod::Exponential, None)
     }
-    
+
     /// Add a logarithmic regression dataset
-    pub fn add_logarithmic_regression(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
-        self.add_regression_dataset(series_label, data, RegressionMethod::Logarithmic, None, SeriesType::Line)
+    fn add_logarithmic_regression_series(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
+        self.add_regression_series(series_label, data, RegressionMethod::Logarithmic, None)
     }
     
-    /// Build final EChartsOption, populating legend
-    pub fn build(self) -> EChartsOption {
-        self.option
+    
+}
+
+
+pub trait ChartBuilderExt<X: AxisInfo, Y: AxisInfo>: Sized
+where X: AxisInfo, Y: AxisInfo
+{
+
+    fn option(&mut self) -> &mut EChartsOption;
+    
+    /// Set chart title
+    fn title_str(mut self, title: &str) -> Self {
+        let t =  self.option().title.get_or_insert_default();
+        t.left = Some(Position::Keyword(PositionKeyword::Center));
+        t.text = Some(title.to_string());
+        self
+    }
+
+    fn subtitle_str(mut self, subtitle: &str) -> Self {
+        self.option().title.get_or_insert_default().sub_text = Some(subtitle.to_string());
+        self
+    }
+
+    fn title(mut self, title: Title) -> Self {
+        self.option().title = Some(title);
+        self
+    }
+
+
+    fn x_axis_label(mut self, x: &str) -> Self {
+        self.option().x_axis.name = Some(x.to_string());
+        self
+    }
+
+    fn y_axis_label(mut self, y: &str) -> Self {
+        self.option().y_axis.name = Some(y.to_string());
+        self
+    }
+
+    //add a dataset and get an index
+    fn add_dataset(mut self, data: Vec<(X, Y)>) -> usize {
+        let index = self.option().dataset.as_mut().unwrap().len();
+        self.option().dataset.as_mut().unwrap().push(DatasetComponent::src(
+            data.into_iter()
+                .map(|(x, y)| [x.into_data_value(), y.into_data_value()])
+                .collect::<Vec<_>>()
+        ));
+        index
+    }
+
+    fn add_dataset_visualisation(mut self, series_label:&str,series_type: SeriesType, dataset_index: usize) -> Self {
+        self.option().series.as_mut().unwrap().push(Series {
+            r#type: Some(series_type),
+            name: Some(format!("{}", series_label)),
+            smooth: Some(true),
+            area_style: None,
+            symbol: None,
+            symbol_size: None,
+            data: SeriesDataSource::DatasetIndex(dataset_index),
+            extra: None
+        });
+        self
+    }
+
+    /// Add a series; X and Y conversions ensure homogeneous types
+    fn add_series(mut self, series_label:&str, data: Vec<(X, Y)>, series_type: SeriesType) -> Self {
+        let data_items: Vec<DataItem> =data.into_iter()
+            .map(|(x, y)| DataItem::Pair([x.into_data_value(), y.into_data_value()]))
+            .collect();
+        self.option().series.as_mut().unwrap().push(
+            Series::new(series_label,series_type,SeriesDataSource::Data(data_items))
+        );
+        self
+    }
+
+    fn build(self, width: Size, height: Size) -> ScriptTemplate;
+}
+
+
+
+impl<X: AxisInfo, Y: AxisInfo>  ChartBuilder<X,Y> {
+
+    pub fn new() -> Self {
+        let opt = EChartsOption {
+            title: None,
+            tooltip: Some(Tooltip {
+                show: true,
+                show_delay: None,
+                hide_delay: None,
+                trigger: Some(TooltipTrigger::Item),
+                formatter: None,
+                axis_pointer: Some(AxisPointer {
+                    r#type: Some(AxisPointerType::Cross),
+                    snap: Some(false),
+                    animation: None,
+                    axis: None,
+                })
+            }),
+            legend: None, grid: None, extra: None, dataset: None,
+            x_axis: Axis { r#type: Some(X::axis_type()), name: None, data: None, extra: None },
+            y_axis: Axis { r#type: Some(Y::axis_type()), name: None, data: None, extra: None },
+            series: Some(Vec::new()),
+        };
+        Self { option: opt, _marker: Default::default() }
+    }
+    
+}
+
+
+impl<X: AxisInfo, Y: AxisInfo> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {
+    fn option(&mut self) -> &mut EChartsOption {
+        &mut self.option
+    }
+
+    fn build(self, width: Size, height: Size) -> ScriptTemplate{
+        ScriptTemplate::new(Uuid::new_v4().to_string(), width, height, self.option)
     }
 }
+
+
+impl <X: ValueAxis + AxisInfo, Y: ValueAxis + AxisInfo> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y> {}
