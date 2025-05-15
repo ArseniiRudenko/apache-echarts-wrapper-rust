@@ -5,108 +5,146 @@ use std::marker::PhantomData;
 use uuid::Uuid;
 
 
-pub trait TypedAxis{
+pub trait AxisInfo {
     fn axis_type()-> AxisType;
+
+    fn into_data_value(self) -> DataValue;
+    
 }
 
-pub trait ValueAxis :TypedAxis {
+//trait that captures AxisType as Value on the type level
+pub trait ValueAxis : AxisInfo {}
+
+impl AxisInfo for u128 {
+
     fn axis_type() -> AxisType { AxisType::Value }
+
+    fn into_data_value(self) -> DataValue { DataValue::U128(self) }
+    
 }
 
-impl TypedAxis for i32 {
+impl ValueAxis for u128 {}
+
+impl AxisInfo for i128 {
+
     fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::I128(self) }
+}
+
+impl ValueAxis for i128 {}
+
+
+impl AxisInfo for i32 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    
+    fn into_data_value(self) -> DataValue { DataValue::I32(self) }
 }
 
 impl ValueAxis for i32 {}
 
-impl TypedAxis for u32 {
+impl AxisInfo for u32 {
     fn axis_type() -> AxisType { AxisType::Value }
+    
+    fn into_data_value(self) -> DataValue { DataValue::U32(self) }
 }
 
 impl ValueAxis for u32 {}
 
-impl TypedAxis for i64 {
+impl AxisInfo for i64 {
     fn axis_type() -> AxisType { AxisType::Value }
+
+    fn into_data_value(self) -> DataValue { DataValue::I64(self) }
 }
 
 impl ValueAxis for i64 {}
 
-impl TypedAxis for f64 {
+impl AxisInfo for u64 {
     fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::U64(self) }
+}
+
+impl ValueAxis for u64 {}
+
+impl AxisInfo for i16 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::I16(self) }
+}
+
+impl ValueAxis for i16 {}
+
+impl AxisInfo for u16 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::U16(self) }
+}
+
+impl ValueAxis for u16 {}
+
+impl AxisInfo for i8 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::I8(self) }
+}
+
+impl ValueAxis for i8 {}
+
+impl AxisInfo for u8 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::U8(self) }
+}
+
+impl ValueAxis for u8 {}
+
+impl AxisInfo for f32 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::F32(self) }
+}
+
+impl ValueAxis for f32 {}
+
+impl AxisInfo for f64 {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::F64(self) }
 }
 
 impl ValueAxis for f64 {}
 
-impl TypedAxis for usize {
+impl AxisInfo for usize {
     fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::Usize(self) }
 }
 
 impl ValueAxis for usize {}
 
-impl TypedAxis for String {
-    fn axis_type() -> AxisType { AxisType::Category }
+impl AxisInfo for isize {
+    fn axis_type() -> AxisType { AxisType::Value }
+    fn into_data_value(self) -> DataValue { DataValue::Isize(self) }
 }
 
-impl<'a> TypedAxis for &'a str {
-    fn axis_type() -> AxisType { AxisType::Category }
-}
-
-
-
-/// Trait to determine an axis type and convert into DataValue
-pub trait AxisInfo {
-  
-    /// Convert a value into DataValue
-    fn into_data_value(self) -> DataValue;
-}
-
-// Implement AxisInfo for common types
-impl AxisInfo for i32 {
-    fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
-}
-
-impl AxisInfo for u32 {
-    fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
-}
-
-impl AxisInfo for u16 {
-    fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
-}
-
-impl AxisInfo for i64 {
-    fn into_data_value(self) -> DataValue { DataValue::Int(self) }
-}
-impl AxisInfo for f64 {
-    fn into_data_value(self) -> DataValue { DataValue::Float(self) }
-}
-
-impl AxisInfo for f32 {
-    fn into_data_value(self) -> DataValue { DataValue::Float(self as f64) }
-}
-
-impl AxisInfo for usize{
-    fn into_data_value(self) -> DataValue { DataValue::Int(self as i64) }
-}
+impl ValueAxis for isize {}
 
 impl AxisInfo for String {
+    fn axis_type() -> AxisType { AxisType::Category }
     fn into_data_value(self) -> DataValue { DataValue::String(self) }
 }
 
 impl<'a> AxisInfo for &'a str {
+    fn axis_type() -> AxisType { AxisType::Category }
     fn into_data_value(self) -> DataValue { DataValue::String(self.to_string()) }
 }
 
 
+
 /// Builder for multi-line charts, inferring axis types from X and Y
 pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo>
-where X: TypedAxis, Y: TypedAxis{
+{
     option: EChartsOption,
     _marker: PhantomData<(X, Y)>,
 }
 
 
-pub trait RegressionChartBuilderExt<X: AxisInfo, Y: AxisInfo>: ChartBuilderExt<X, Y>
-where X: ValueAxis, Y: ValueAxis {
+pub trait RegressionChartBuilderExt<X, Y>: ChartBuilderExt<X, Y>
+where X: AxisInfo + ValueAxis,
+      Y: AxisInfo + ValueAxis 
+{
     
     fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
         self.add_regression_dataset(data_source_index, RegressionMethod::Linear, None)
@@ -232,7 +270,8 @@ where X: ValueAxis, Y: ValueAxis {
 
 
 pub trait ChartBuilderExt<X: AxisInfo, Y: AxisInfo>: Sized
-where X: TypedAxis, Y: TypedAxis{
+where X: AxisInfo, Y: AxisInfo
+{
 
     fn option(&mut self) -> &mut EChartsOption;
     
@@ -306,7 +345,7 @@ where X: TypedAxis, Y: TypedAxis{
 
 
 
-impl<X: AxisInfo + TypedAxis, Y: AxisInfo+TypedAxis>  ChartBuilder<X,Y> {
+impl<X: AxisInfo + AxisInfo, Y: AxisInfo+ AxisInfo>  ChartBuilder<X,Y> {
 
     pub fn new() -> Self {
         let opt = EChartsOption {
@@ -335,7 +374,7 @@ impl<X: AxisInfo + TypedAxis, Y: AxisInfo+TypedAxis>  ChartBuilder<X,Y> {
 }
 
 
-impl<X: AxisInfo + TypedAxis, Y: AxisInfo+TypedAxis> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {
+impl<X: AxisInfo + AxisInfo, Y: AxisInfo+ AxisInfo> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {
     fn option(&mut self) -> &mut EChartsOption {
         &mut self.option
     }
@@ -346,4 +385,4 @@ impl<X: AxisInfo + TypedAxis, Y: AxisInfo+TypedAxis> ChartBuilderExt<X, Y> for  
 }
 
 
-impl <X: AxisInfo + ValueAxis + TypedAxis, Y: AxisInfo + ValueAxis + TypedAxis> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y> {}
+impl <X: AxisInfo + ValueAxis + AxisInfo, Y: AxisInfo + ValueAxis + AxisInfo> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y> {}
