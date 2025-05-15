@@ -1,16 +1,15 @@
 use crate::common::Size;
-use crate::options::{Axis, AxisPointer, AxisPointerType, AxisType, DataItem, DataPointSymbol, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Source, Title, Tooltip, TooltipTrigger, Transform};
+use crate::options::{Axis, AxisPointer, AxisPointerType, AxisType, DataItem, DataPointSymbol, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title, Tooltip, TooltipTrigger};
 use crate::templates::ScriptTemplate;
 use std::marker::PhantomData;
 use uuid::Uuid;
-
 
 
 pub trait TypedAxis{
     fn axis_type()-> AxisType;
 }
 
-pub trait ValueAxis {
+pub trait ValueAxis :TypedAxis {
     fn axis_type() -> AxisType { AxisType::Value }
 }
 
@@ -106,8 +105,8 @@ where X: TypedAxis, Y: TypedAxis{
 }
 
 
-pub trait RegressionChartBuilderExt<X: AxisInfo, Y: AxisInfo>: Sized
-where X: ValueAxis, Y: ValueAxis{
+pub trait RegressionChartBuilderExt<X: AxisInfo, Y: AxisInfo>: ChartBuilderExt<X, Y>
+where X: ValueAxis, Y: ValueAxis {
     
     fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
         self.add_regression_dataset(data_source_index, RegressionMethod::Linear, None)
@@ -122,7 +121,7 @@ where X: ValueAxis, Y: ValueAxis{
     }
 
     fn add_regression_dataset(mut self, data_source_index: usize, method: RegressionMethod, order: Option<u32>) -> usize {
-        let index = self.option.dataset.as_mut().unwrap().len();
+        let index = self.option().dataset.as_mut().unwrap().len();
         let regression_config = RegressionConfig {
             method: method.clone(),
             order,
@@ -133,7 +132,7 @@ where X: ValueAxis, Y: ValueAxis{
             config: Some(regression_config),
             extra: None,
         };
-        self.option.dataset.as_mut().unwrap().push(DatasetComponent::tr(dataset, data_source_index));
+        self.option().dataset.as_mut().unwrap().push(DatasetComponent::tr(dataset, data_source_index));
         index
     }
 
@@ -142,8 +141,8 @@ where X: ValueAxis, Y: ValueAxis{
     fn add_regression_series(mut self, series_label: &str, data: Vec<(X, Y)>,
                              method: RegressionMethod, order: Option<u32>) -> Self {
         // Create a dataset vector if it doesn't exist
-        if self.option.dataset.is_none() {
-            self.option.dataset = Some(Vec::new());
+        if self.option().dataset.is_none() {
+            self.option().dataset = Some(Vec::new());
         }
 
         // Convert the data to a format suitable for ECharts
@@ -152,7 +151,7 @@ where X: ValueAxis, Y: ValueAxis{
             .collect::<Vec<_>>();
 
         // Add source dataset
-        let datasets = self.option.dataset.as_mut().unwrap();
+        let datasets = self.option().dataset.as_mut().unwrap();
         let source_index = datasets.len();
         datasets.push(DatasetComponent::src(raw_data));
 
@@ -182,7 +181,7 @@ where X: ValueAxis, Y: ValueAxis{
         );
 
         // Add scatter series for original data
-        self.option.series.as_mut().unwrap().push(Series {
+        self.option().series.as_mut().unwrap().push(Series {
             r#type: Some(SeriesType::Scatter),
             name: Some(format!("{} (data)", series_label)),
             smooth: None,
@@ -194,7 +193,7 @@ where X: ValueAxis, Y: ValueAxis{
         });
 
         // Add line series for regression
-        self.option.series.as_mut().unwrap().push(Series {
+        self.option().series.as_mut().unwrap().push(Series {
             r#type: Some(SeriesType::Line),
             name: Some(format!("{} (regression)", series_label)),
             smooth: Some(true),
@@ -235,39 +234,41 @@ where X: ValueAxis, Y: ValueAxis{
 pub trait ChartBuilderExt<X: AxisInfo, Y: AxisInfo>: Sized
 where X: TypedAxis, Y: TypedAxis{
 
+    fn option(&mut self) -> &mut EChartsOption;
+    
     /// Set chart title
     fn title_str(mut self, title: &str) -> Self {
-        let t =  self.option.title.get_or_insert_default();
+        let t =  self.option().title.get_or_insert_default();
         t.left = Some(Position::Keyword(PositionKeyword::Center));
         t.text = Some(title.to_string());
         self
     }
 
     fn subtitle_str(mut self, subtitle: &str) -> Self {
-        self.option.title.get_or_insert_default().sub_text = Some(subtitle.to_string());
+        self.option().title.get_or_insert_default().sub_text = Some(subtitle.to_string());
         self
     }
 
     fn title(mut self, title: Title) -> Self {
-        self.option.title = Some(title);
+        self.option().title = Some(title);
         self
     }
 
 
     fn x_axis_label(mut self, x: &str) -> Self {
-        self.option.x_axis.name = Some(x.to_string());
+        self.option().x_axis.name = Some(x.to_string());
         self
     }
 
     fn y_axis_label(mut self, y: &str) -> Self {
-        self.option.y_axis.name = Some(y.to_string());
+        self.option().y_axis.name = Some(y.to_string());
         self
     }
 
     //add a dataset and get an index
     fn add_dataset(mut self, data: Vec<(X, Y)>) -> usize {
-        let index = self.option.dataset.as_mut().unwrap().len();
-        self.option.dataset.as_mut().unwrap().push(DatasetComponent::src(
+        let index = self.option().dataset.as_mut().unwrap().len();
+        self.option().dataset.as_mut().unwrap().push(DatasetComponent::src(
             data.into_iter()
                 .map(|(x, y)| [x.into_data_value(), y.into_data_value()])
                 .collect::<Vec<_>>()
@@ -276,7 +277,7 @@ where X: TypedAxis, Y: TypedAxis{
     }
 
     fn add_dataset_visualisation(mut self, series_label:&str,series_type: SeriesType, dataset_index: usize) -> Self {
-        self.option.series.as_mut().unwrap().push(Series {
+        self.option().series.as_mut().unwrap().push(Series {
             r#type: Some(series_type),
             name: Some(format!("{}", series_label)),
             smooth: Some(true),
@@ -294,15 +295,13 @@ where X: TypedAxis, Y: TypedAxis{
         let data_items: Vec<DataItem> =data.into_iter()
             .map(|(x, y)| DataItem::Pair([x.into_data_value(), y.into_data_value()]))
             .collect();
-        self.option.series.as_mut().unwrap().push(
+        self.option().series.as_mut().unwrap().push(
             Series::new(series_label,series_type,SeriesDataSource::Data(data_items))
         );
         self
     }
 
-    fn build(self, width: Size, height: Size) -> ScriptTemplate{
-        ScriptTemplate::new(Uuid::new_v4().to_string(),width,height,self.option)
-    }
+    fn build(self, width: Size, height: Size) -> ScriptTemplate;
 }
 
 
@@ -336,7 +335,15 @@ impl<X: AxisInfo + TypedAxis, Y: AxisInfo+TypedAxis>  ChartBuilder<X,Y> {
 }
 
 
-impl<X: AxisInfo + TypedAxis, Y: AxisInfo+TypedAxis> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {}
+impl<X: AxisInfo + TypedAxis, Y: AxisInfo+TypedAxis> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {
+    fn option(&mut self) -> &mut EChartsOption {
+        &mut self.option
+    }
+
+    fn build(self, width: Size, height: Size) -> ScriptTemplate{
+        ScriptTemplate::new(Uuid::new_v4().to_string(), width, height, self.option)
+    }
+}
 
 
-impl <X: AxisInfo + ValueAxis, Y: AxisInfo+ValueAxis> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y> {}
+impl <X: AxisInfo + ValueAxis + TypedAxis, Y: AxisInfo + ValueAxis + TypedAxis> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y> {}

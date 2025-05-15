@@ -28,14 +28,28 @@ mod tests {
                 vec![(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
                 ,SeriesType::Line
             )
-            .add_linear_regression_series(
-                "third set",
-                vec![(1.0,"First"),(1.0,"Second"),(3.5,"Third"),(4.0,"Fourth"),(4.1,"First"),(4.1,"Third"),(5.0,"Fourth"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
-                
-            )
             .build(Size::pixels(600),Size::pixels(400));
 
-        let body = chart.render_once().unwrap();
+        let numeric_chart = ChartBuilder::<f64, f64>::new()
+            .title_str("Something completely different")
+            .add_linear_regression_series(
+                "regression set",
+                vec![
+                    (1.0,11.0),
+                    (1.0,20.0),
+                    (3.5,30.0),
+                    (4.0,40.0),
+                    (4.1,11.0),
+                    (4.1,35.0),
+                    (5.0,40.0),
+                    (14.0,33.0),
+                    (15.0,31.0),
+                    (20.0,11.0)
+                ]
+            ) .build(Size::pixels(600),Size::pixels(400));
+
+        let mut body = chart.render_once().unwrap();
+        body.push_str(numeric_chart.render_once().unwrap().as_str());
         // Generate your HTML string here
         let html = OnePage::new("Test",body.as_str()).render_once().unwrap();
 
