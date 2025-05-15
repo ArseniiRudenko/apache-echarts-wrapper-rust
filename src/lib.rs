@@ -5,7 +5,7 @@ mod common;
 
 #[cfg(test)]
 mod tests {
-    use crate::builder::ChartBuilder;
+    use crate::builder::{ChartBuilder, ChartBuilderExt, RegressionChartBuilderExt};
     use crate::options::SeriesType;
     use crate::templates::OnePage;
     use sailfish::TemplateSimple;
@@ -19,14 +19,19 @@ mod tests {
     fn it_works() {
         let chart = ChartBuilder::<f64, &str>::new()
             .title_str("Something interesting")
-            .add_dataset(
+            .add_series(
                 "fist_set",
                 vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
                 ,SeriesType::Line)
-            .add_dataset(
+            .add_series(
                 "second_set",
                 vec![(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
                 ,SeriesType::Line
+            )
+            .add_linear_regression_series(
+                "third set",
+                vec![(1.0,"First"),(1.0,"Second"),(3.5,"Third"),(4.0,"Fourth"),(4.1,"First"),(4.1,"Third"),(5.0,"Fourth"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
+                
             )
             .build(Size::pixels(600),Size::pixels(400));
 

@@ -31,12 +31,10 @@ pub struct EChartsOption {
     pub dataset: Option<Vec<DatasetComponent>>,
 
     /// X-axis options (Cartesian charts)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub x_axis: Option<Axis>,
+    pub x_axis: Axis,
 
     /// Y-axis options (Cartesian charts)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub y_axis: Option<Axis>,
+    pub y_axis: Axis,
 
     /// Series data
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -76,7 +74,7 @@ pub enum Position {
 }
 
 /// Title component
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone,Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Title {
     /// Main title text
@@ -187,11 +185,48 @@ pub enum TooltipTrigger {
     None
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum AxisPointerType {
+    Cross,
+    Line,
+    Shadow,
+    None
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum AxisPointerTargetAxis{
+    Auto,
+    X,
+    Y,
+    Radius,
+    Angle
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AxisPointer{
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<AxisPointerType>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snap : Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub animation : Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub axis: Option<AxisPointerTargetAxis>
+
+
+}
+
 /// Tooltip component
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Tooltip {
-
     pub show: bool,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -208,9 +243,9 @@ pub struct Tooltip {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub formatter: Option<Value>,
 
-    /// Additional raw tooltip options
-    #[serde(flatten)]
-    pub extra: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub axis_pointer: Option<AxisPointer>,
+
 }
 
 /// Legend component
@@ -321,12 +356,25 @@ pub enum SeriesType {
 
 /// Internal enum to represent the data source for a series
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all= "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub enum SeriesDataSource {
     /// Direct data items
     Data(Vec<DataItem>),
     /// Reference to a dataset by index
     DatasetIndex(usize),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum DataPointSymbol {
+    Circle,
+    Rect,
+    RoundRect,
+    Triangle,
+    Diamond,
+    Pin,
+    Arrow,
+    None
 }
 
 /// Series definition
@@ -351,6 +399,12 @@ pub struct Series {
     #[serde(flatten)]
     pub data: SeriesDataSource,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<DataPointSymbol>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol_size: Option<usize>,
+
     /// Additional raw series options
     #[serde(flatten)]
     pub extra: Option<Value>,
@@ -364,6 +418,8 @@ impl Series {
             smooth: None,
             area_style: None,
             data,
+            symbol: None,
+            symbol_size: None,
             extra: None,
         }
     }
@@ -390,23 +446,49 @@ pub struct AreaStyle{
 
 
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Transform{
+    pub transform: DatasetTransform,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_dataset_index: Option<usize>
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Source{
+    pub source: Vec<[DataValue; 2]>,
+}
+
 
 /// Dataset component for providing and transforming data
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct DatasetComponent {
-    /// Raw data source (array of arrays or objects)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source: Option<Vec<[DataValue; 2]>>,
+#[serde(untagged)]
+pub enum DatasetComponent {
+    Source(Source),
+    Transform(Transform)
+}
 
-    /// Transform applied to this dataset
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub transform: Option<DatasetTransform>,
+impl DatasetComponent {
+    pub fn tr(transform: DatasetTransform,index: usize) -> Self{
+        Self::Transform(
+            Transform {
+                transform,
+                from_dataset_index: Some(index),
+            }
+        )
+    }
 
-    /// Additional raw dataset options
-    #[serde(flatten)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub extra: Option<Value>,
+    pub fn src(source: Vec<[DataValue; 2]>) -> Self {
+        Self::Source(
+            Source {
+                source
+            }
+        )
+    }
+
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
