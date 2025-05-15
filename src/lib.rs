@@ -1,7 +1,13 @@
-mod options;
+pub mod options;
 mod builder;
-mod templates;
-mod common;
+pub mod templates;
+pub mod common;
+
+pub use builder::{
+    ChartBuilder,
+    ChartBuilderExt,
+    RegressionChartBuilderExt,
+};
 
 #[cfg(test)]
 mod tests {
