@@ -6,13 +6,15 @@ use uuid::Uuid;
 
 
 pub trait AxisInfo {
-    fn axis_type()-> AxisType;
+    fn axis_type() -> AxisType;
 
     fn into_data_value(self) -> DataValue;
     
 }
 
-//trait that captures AxisType as Value on the type level
+///Trait that captures types that have AxisType as Value on the type level. 
+///That will catch and prevent user from trying to create regression charts on category data
+///(which is not supported but will not cause an error, instead the chart just won't render)
 pub trait ValueAxis : AxisInfo {}
 
 impl AxisInfo for u128 {
@@ -36,7 +38,7 @@ impl ValueAxis for i128 {}
 
 impl AxisInfo for i32 {
     fn axis_type() -> AxisType { AxisType::Value }
-    
+
     fn into_data_value(self) -> DataValue { DataValue::I32(self) }
 }
 
@@ -44,7 +46,7 @@ impl ValueAxis for i32 {}
 
 impl AxisInfo for u32 {
     fn axis_type() -> AxisType { AxisType::Value }
-    
+
     fn into_data_value(self) -> DataValue { DataValue::U32(self) }
 }
 
@@ -140,10 +142,10 @@ pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo>
     _marker: PhantomData<(X, Y)>,
 }
 
-
+///trait that provides regression methods that are only supported when both x and y are numeric
 pub trait RegressionChartBuilderExt<X, Y>: ChartBuilderExt<X, Y>
 where X: AxisInfo + ValueAxis,
-      Y: AxisInfo + ValueAxis 
+      Y: AxisInfo + ValueAxis
 {
     
     fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
@@ -345,7 +347,7 @@ where X: AxisInfo, Y: AxisInfo
 
 
 
-impl<X: AxisInfo + AxisInfo, Y: AxisInfo+ AxisInfo>  ChartBuilder<X,Y> {
+impl<X: AxisInfo, Y: AxisInfo>  ChartBuilder<X,Y> {
 
     pub fn new() -> Self {
         let opt = EChartsOption {
@@ -374,7 +376,7 @@ impl<X: AxisInfo + AxisInfo, Y: AxisInfo+ AxisInfo>  ChartBuilder<X,Y> {
 }
 
 
-impl<X: AxisInfo + AxisInfo, Y: AxisInfo+ AxisInfo> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {
+impl<X: AxisInfo, Y: AxisInfo> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {
     fn option(&mut self) -> &mut EChartsOption {
         &mut self.option
     }
@@ -385,4 +387,4 @@ impl<X: AxisInfo + AxisInfo, Y: AxisInfo+ AxisInfo> ChartBuilderExt<X, Y> for  C
 }
 
 
-impl <X: AxisInfo + ValueAxis + AxisInfo, Y: AxisInfo + ValueAxis + AxisInfo> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y> {}
+impl <X: ValueAxis + AxisInfo, Y: ValueAxis + AxisInfo> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y> {}
