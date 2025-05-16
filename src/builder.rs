@@ -114,6 +114,29 @@ impl<'a> AxisInfo for &'a str {
 
 
 
+///trait used to add X and Y type parameters to Into trait, so we can limit converted types
+pub trait  Convertable<X,Y,Z> : Into<Z>{}
+
+impl<X,Y> Convertable<X,Y, SeriesDataSource> for Vec<(X, Y)>
+where X: Into<DataValue>,
+      Y: Into<DataValue>{}
+
+
+impl<X,Y> Convertable<X,Y, SeriesDataSource> for Vec<(X, Y, String)>
+where X: Into<DataValue>,
+      Y: Into<DataValue>{}
+
+impl<X,Y> Convertable<X,Y,DatasetComponent> for Vec<(X, Y)>
+where X: Into<DataValue>,
+      Y: Into<DataValue>{}
+
+
+impl<X,Y> Convertable<X,Y,DatasetComponent> for Vec<(X, Y, String)>
+where X: Into<DataValue>,
+      Y: Into<DataValue>{}
+
+
+
 /// Builder for multi-line charts, inferring axis types from X and Y
 pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo>
 {
@@ -157,7 +180,7 @@ where X: AxisInfo + ValueAxis + Into<DataValue>,
 
 
     /// Add a dataset with regression transformation
-    fn add_regression_series<TData:Into<DatasetComponent>>(mut self, series_label: &str, data: TData,
+    fn add_regression_series<TData:Convertable<X,Y, DatasetComponent>>(mut self, series_label: &str, data: TData,
                              method: RegressionMethod, order: Option<u32>) -> Self {
         // Create a dataset vector if it doesn't exist
         if self.option().dataset.is_none() {
@@ -202,7 +225,7 @@ where X: AxisInfo + ValueAxis + Into<DataValue>,
             area_style: None,
             data: SeriesDataSource::DatasetIndex(source_index),
             symbol: Some(DataPointSymbol::Circle),
-            symbol_size: Some(15),
+            symbol_size: Some(8),
             extra: None,
         });
 
@@ -222,22 +245,23 @@ where X: AxisInfo + ValueAxis + Into<DataValue>,
     }
 
     /// Add a linear regression dataset
-    fn add_linear_regression_series<TData:Into<DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
+    fn add_linear_regression_series<TData:Convertable<X,Y, DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Linear, None)
     }
 
     /// Add a polynomial regression dataset
-    fn add_polynomial_regression_series<TData:Into<DatasetComponent>>(self, series_label: &str, data: TData, order: u32) -> Self {
+    fn add_polynomial_regression_series<TData:Convertable<X,Y, DatasetComponent>>(self, series_label: &str, data: TData, order: u32) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Polynomial, Some(order))
     }
 
     /// Add an exponential regression dataset
-    fn add_exponential_regression_series<TData:Into<DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
+    fn add_exponential_regression_series<TData:Convertable<X,Y, DatasetComponent>>(self, series_label: &str, data: TData) -> Self
+    {
         self.add_regression_series(series_label, data, RegressionMethod::Exponential, None)
     }
 
     /// Add a logarithmic regression dataset
-    fn add_logarithmic_regression_series<TData:Into<DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
+    fn add_logarithmic_regression_series<TData:Convertable<X,Y, DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Logarithmic, None)
     }
     
@@ -328,7 +352,7 @@ where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>
     }
 
 
-    fn add_series<TData: Into<SeriesDataSource>>(mut self, series_label:&str, data: TData, series_type: SeriesType) -> Self {
+    fn add_series<TData: Convertable<X,Y,SeriesDataSource>>(mut self, series_label:&str, data: TData, series_type: SeriesType) -> Self {
         self.option().series.as_mut().unwrap().push(
             Series::new(series_label,series_type,data.into())
         );

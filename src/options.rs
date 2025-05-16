@@ -282,7 +282,7 @@ pub enum AxisType {
 }
 
 /// Primitive values allowed in data (string, int, float)
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum DataValue {
     Isize(isize),
@@ -498,6 +498,8 @@ pub enum SeriesDataSource {
     /// Reference to a dataset by index
     DatasetIndex(usize)
 }
+
+
 
 
 impl<X,Y> Into<SeriesDataSource> for Vec<(X, Y)>

@@ -39,6 +39,21 @@ mod tests {
         let numeric_chart = ChartBuilder::<f64, f64>::new()
             .title_str("Something completely different")
             .add_linear_regression_series(
+                "regression set2",
+                vec![
+                    (1.0,1.0),
+                    (1.0,2.0),
+                    (3.5,3.0),
+                    (4.0,4.0),
+                    (4.1,1.0),
+                    (4.1,3.0),
+                    (5.0,4.0),
+                    (14.0,3.0),
+                    (15.0,1.0),
+                    (20.0,1.0)
+                ]
+            )
+            .add_linear_regression_series(
                 "regression set",
                 vec![
                     (1.0,11.0),
