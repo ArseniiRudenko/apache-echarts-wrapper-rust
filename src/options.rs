@@ -1,7 +1,3 @@
-//! Auto-generated Rust bindings for Apache ECharts `option` JSON configuration.
-//! This module provides strongly-typed structs for commonly used configuration options.
-//! Extend as needed for additional ECharts features.
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::common::Percent;
@@ -10,7 +6,7 @@ use crate::options::DataVariant::NamedPair;
 /// Root object for ECharts configuration
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct EChartsOption {
+pub struct EChartsOption<X,Y> {
     /// Chart title options
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<Title>,
@@ -29,17 +25,17 @@ pub struct EChartsOption {
 
     /// Dataset component for providing data
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dataset: Option<Vec<DatasetComponent>>,
+    pub dataset: Option<Vec<DatasetComponent<X,Y>>>,
 
     /// X-axis options (Cartesian charts)
-    pub x_axis: Axis,
+    pub x_axis: Axis<X>,
 
     /// Y-axis options (Cartesian charts)
-    pub y_axis: Axis,
+    pub y_axis: Axis<Y>,
 
     /// Series data
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub series: Option<Vec<Series>>,
+    pub series: Option<Vec<Series<X,Y>>>,
 
     /// Additional raw options not covered by this binding
     #[serde(flatten)]
@@ -281,131 +277,20 @@ pub enum AxisType {
     Unknown,
 }
 
-/// Primitive values allowed in data (string, int, float)
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(untagged)]
-pub enum DataValue {
-    Isize(isize),
-    I128(i128),
-    I64(i64),
-    I32(i32),
-    I16(i16),
-    I8(i8),
-    Usize(usize),
-    U128(u128),
-    U64(u64),
-    U32(u32),
-    U16(u16),
-    U8(u8),
-    F32(f32),
-    F64(f64),
-    String(String),
-}
-
-impl Into<DataValue> for u128  {
-    fn into(self) -> DataValue {
-        DataValue::U128(self)
-    }
-}
-
-impl Into<DataValue> for u64  {
-    fn into(self) -> DataValue {
-        DataValue::U64(self)
-    }
-}
-
-impl Into<DataValue> for u32  {
-    fn into(self) -> DataValue {
-        DataValue::U32(self)
-    }
-}
-
-impl Into<DataValue> for u16  {
-    fn into(self) -> DataValue {
-        DataValue::U16(self)
-    }
-}
-
-impl Into<DataValue> for u8  {
-    fn into(self) -> DataValue {
-        DataValue::U8(self)
-    }
-}
-
-impl Into<DataValue> for i128  {
-    fn into(self) -> DataValue {
-        DataValue::I128(self)
-    }
-}
-
-impl Into<DataValue> for i64  {
-    fn into(self) -> DataValue {
-        DataValue::I64(self)
-    }
-}
-
-impl Into<DataValue> for i32  {
-    fn into(self) -> DataValue {
-        DataValue::I32(self)
-    }
-}
-
-impl Into<DataValue> for i16  {
-    fn into(self) -> DataValue {
-        DataValue::I16(self)
-    }
-}
-
-impl Into<DataValue> for i8  {
-    fn into(self) -> DataValue {
-        DataValue::I8(self)
-    }
-}
-
-impl Into<DataValue> for isize  {
-    fn into(self) -> DataValue {
-        DataValue::Isize(self)
-    }
-}
-
-impl Into<DataValue> for f32  {
-    fn into(self) -> DataValue {
-        DataValue::F32(self)
-    }
-}
-
-impl Into<DataValue> for f64  {
-    fn into(self) -> DataValue {
-        DataValue::F64(self)
-    }
-}
-
-impl Into<DataValue> for String  {
-    fn into(self) -> DataValue {
-        DataValue::String(self)
-    }
-}
-
-impl Into<DataValue> for &str  {
-    fn into(self) -> DataValue {
-        DataValue::String(self.to_string())
-    }
-}
-
 
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct  NamedValuePair{
-    value: [DataValue; 2],
+pub struct  NamedValuePair<X,Y>{
+    value: (X,Y),
     name: String,
 }
 
-impl NamedValuePair {
-    pub fn new(x: DataValue, y: DataValue, name: String) -> Self {
+impl<X,Y> NamedValuePair<X,Y> {
+    pub fn new(x: X, y: Y, name: String) -> Self {
         Self{
-            value: [x, y],
+            value: (x, y),
             name,
         }
     }
@@ -414,8 +299,8 @@ impl NamedValuePair {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct  NamedValue{
-    value: DataValue,
+pub struct  NamedValue<X>{
+    value: X,
     name: String,
 }
 
@@ -423,7 +308,7 @@ pub struct  NamedValue{
 /// Axis (cartesian)
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct Axis {
+pub struct Axis<T> {
     /// Axis type: value, category, time, log
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<AxisType>,
@@ -434,7 +319,7 @@ pub struct Axis {
 
     /// Data for category axis
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<Vec<DataValue>>,
+    pub data: Option<Vec<T>>,
 
     /// Additional raw axis options
     #[serde(flatten)]
@@ -475,91 +360,79 @@ pub enum SeriesType {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
-pub enum DataVariant{
+pub enum DataVariant<X,Y>{
     /// Single dimension data (string/int/float)
-    Data(Vec<DataValue>),
+    Data(Vec<X>),
 
     /// Two-dimensional data: [x, y]
-    Pair(Vec<[DataValue; 2]>),
+    Pair(Vec<(X,Y)>),
 
     /// Single dimension data as an object with a name field
-    Named(Vec<NamedValue>),
+    Named(Vec<NamedValue<X>>),
 
     /// Two-dimensional data with the name: { value: [x, y], name: "str" }
-    NamedPair(Vec<NamedValuePair>),
+    NamedPair(Vec<NamedValuePair<X,Y>>),
 }
 
 /// Internal enum to represent the data source for a series
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub enum SeriesDataSource {
+pub enum SeriesDataSource<X,Y>{
     /// Direct data
-    Data(DataVariant),
+    Data(DataVariant<X,Y>),
     /// Reference to a dataset by index
     DatasetIndex(usize)
 }
 
-
-
-
-impl<X,Y> Into<SeriesDataSource> for Vec<(X, Y)>
-where X: Into<DataValue>,
-Y: Into<DataValue>
+impl<X,Y> Into<SeriesDataSource<X,Y>> for Vec<(X, Y)>
 {
-    fn into(self) -> SeriesDataSource {
-        SeriesDataSource::from_value_pairs(self)
+    fn into(self) -> SeriesDataSource<X,Y> {
+        SeriesDataSource::from_pairs(self)
     }
 
 }
 
-impl<X,Y> Into<SeriesDataSource> for Vec<(X, Y, String)>
-where X: Into<DataValue>,
-Y: Into<DataValue>
+impl<X,Y> Into<SeriesDataSource<X,Y>> for Vec<(X, Y, String)>
 {
-    fn into(self) -> SeriesDataSource {
+    fn into(self) -> SeriesDataSource<X,Y> {
         SeriesDataSource::from_tuples_with_label(self)
     }
 }
 
-impl<X> Into<SeriesDataSource> for Vec<X>
-where X: Into<DataValue>
+impl<X> Into<SeriesDataSource<X,X>> for Vec<X>
 {
-    fn into(self) -> SeriesDataSource {
+    fn into(self) -> SeriesDataSource<X,X> {
         SeriesDataSource::from_values(self)
     }
 }
 
-
-
-impl SeriesDataSource {
+impl<X,Y> SeriesDataSource<X,Y> {
     /// Creates a new SeriesDataSource that references a dataset by index
     pub fn from_dataset_index(index: usize) -> Self {
         Self::DatasetIndex(index)
     }
 
     /// Creates a SeriesDataSource with simple array of values
-    pub fn with_values(values: Vec<DataValue>) -> Self {
+    pub fn with_values(values: Vec<X>) -> Self {
         Self::Data(DataVariant::Data(values))
     }
 
     /// Creates a SeriesDataSource with array of [x,y] pairs
-    pub fn with_pairs(pairs: Vec<[DataValue; 2]>) -> Self {
+    pub fn from_pairs(pairs: Vec<(X,Y)>) -> Self {
         Self::Data(DataVariant::Pair(pairs))
     }
 
-   pub fn from_named_value_pairs(named_pairs: Vec<NamedValuePair>) -> Self{
+   pub fn from_named_value_pairs(named_pairs: Vec<NamedValuePair<X,Y>>) -> Self{
        Self::Data(NamedPair(named_pairs))
    }
 
 
     /// Creates a SeriesDataSource with named values
-    pub fn with_named_values(named_values: Vec<NamedValue>) -> Self {
+    pub fn with_named_values(named_values: Vec<NamedValue<X>>) -> Self {
         Self::Data(DataVariant::Named(named_values))
     }
 
-    pub fn from_labeled_values<X>(values: Vec<(X, String)>) -> Self
-    where
-        X: Into<DataValue>
+    pub fn from_labeled_values(values: Vec<(X, String)>) -> Self
     {
         let data_named_values = values.into_iter().map(|(x,label)| NamedValue{
             value: x.into(),
@@ -570,10 +443,7 @@ impl SeriesDataSource {
 
 
     /// Creates a SeriesDataSource with named pairs
-    pub fn from_tuples_with_label<X, Y>(values: Vec<(X, Y, String)>) -> Self
-    where
-        X: Into<DataValue>,
-        Y: Into<DataValue>
+    pub fn from_tuples_with_label(values: Vec<(X, Y, String)>) -> Self
     {
         let data_named_pairs = values.into_iter()
             .map(|(x, y,label) | NamedValuePair::new(x.into(), y.into(),label))
@@ -582,24 +452,11 @@ impl SeriesDataSource {
     }
 
     /// Helper method to create a SeriesDataSource from a vector of any type that can be converted to DataValue
-    pub fn from_values<T>(values: Vec<T>) -> Self
-    where
-        T: Into<DataValue>
+    pub fn from_values(values: Vec<X>) -> Self
     {
         Self::with_values(values.into_iter().map(|v| v.into()).collect())
     }
 
-    /// Helper method to create a SeriesDataSource from pairs of values that can be converted to DataValue
-    pub fn from_value_pairs<X, Y>(pairs: Vec<(X, Y)>) -> Self
-    where
-        X: Into<DataValue>,
-        Y: Into<DataValue>
-    {
-        let data_pairs = pairs.into_iter()
-            .map(|(x, y)| [x.into(), y.into()])
-            .collect();
-        Self::with_pairs(data_pairs)
-    }
 }
 
 
@@ -619,7 +476,7 @@ pub enum DataPointSymbol {
 /// Series definition
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Series {
+pub struct Series<X,Y> {
     /// Chart type
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<SeriesType>,
@@ -636,7 +493,7 @@ pub struct Series {
 
     /// Data array
     #[serde(flatten)]
-    pub data: SeriesDataSource,
+    pub data: SeriesDataSource<X,Y>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub symbol: Option<DataPointSymbol>,
@@ -649,8 +506,8 @@ pub struct Series {
     pub extra: Option<Value>,
 }
 
-impl Series {
-    pub fn new(name:&str, r#type: SeriesType, data: SeriesDataSource) -> Series {
+impl<X,Y> Series <X,Y>{
+    pub fn new(name:&str, r#type: SeriesType, data: SeriesDataSource<X,Y>) -> Series<X,Y> {
         Self{
             r#type: Some(r#type),
             name: Some(name.to_string()),
@@ -698,14 +555,14 @@ pub struct Transform{
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Source{
-    pub source: Vec<[DataValue; 2]>,
+pub struct Source<X,Y>{
+    pub source: Vec<(X,Y)>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct LabelledSource{
-    pub source: Vec<[DataValue; 3]>,
+pub struct LabelledSource<X,Y>{
+    pub source: Vec<(X,Y,String)>,
 }
 
 
@@ -713,34 +570,30 @@ pub struct LabelledSource{
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
-pub enum DatasetComponent {
-    Source(Source),
-    LabelledSource(LabelledSource),
+pub enum DatasetComponent<X,Y> {
+    Source(Source<X,Y>),
+    LabelledSource(LabelledSource<X,Y>),
     Transform(Transform)
 }
 
 
-impl<X,Y> Into<DatasetComponent> for Vec<(X,Y)>
-where X: Into<DataValue>,
-      Y: Into<DataValue>
+impl<X,Y> Into<DatasetComponent<X,Y>> for Vec<(X,Y)>
 {
-    fn into(self) -> DatasetComponent {
-        DatasetComponent::src(self.into_iter().map(|(x,y)| [x.into(), y.into()]).collect())
+    fn into(self) -> DatasetComponent<X,Y> {
+        DatasetComponent::src(self)
     }
 }
 
-impl<X,Y> Into<DatasetComponent> for Vec<(X,Y,String)>
-where X: Into<DataValue>,
-      Y: Into<DataValue>
+impl<X,Y> Into<DatasetComponent<X,Y>> for Vec<(X,Y,String)>
 {
-    fn into(self) -> DatasetComponent {
-        DatasetComponent::labelled_source(self.into_iter().map(|(x,y,z)| [x.into(), y.into(), z.into()]).collect())
+    fn into(self) -> DatasetComponent<X,Y> {
+        DatasetComponent::labelled_source(self)
     }
 }
 
 
 
-impl DatasetComponent {
+impl<X,Y> DatasetComponent<X,Y> {
     pub fn tr(transform: DatasetTransform,index: usize) -> Self{
         Self::Transform(
             Transform {
@@ -750,7 +603,7 @@ impl DatasetComponent {
         )
     }
 
-    pub fn src(source: Vec<[DataValue; 2]>) -> Self {
+    pub fn src(source: Vec<(X,Y)>) -> Self {
         Self::Source(
             Source {
                 source
@@ -759,7 +612,7 @@ impl DatasetComponent {
     }
 
     /// Constructor for the labeled source. Always put the label last
-    pub fn labelled_source(source: Vec<[DataValue; 3]>) -> Self {
+    pub fn labelled_source(source: Vec<(X,Y,String)>) -> Self {
         Self::LabelledSource(
             LabelledSource{
                 source

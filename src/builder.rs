@@ -1,11 +1,10 @@
 use crate::common::Size;
-use crate::options::{Axis, AxisPointer, AxisPointerType, AxisType, DataPointSymbol, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title, Tooltip, TooltipTrigger};
+use crate::options::{Axis, AxisPointer, AxisPointerType, AxisType, DataPointSymbol, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title, Tooltip, TooltipTrigger};
 use crate::templates::ScriptTemplate;
 use std::marker::PhantomData;
+use serde::Serialize;
 use serde_json::json;
 use uuid::Uuid;
-
-
 
 
 pub trait AxisInfo {
@@ -113,41 +112,17 @@ impl<'a> AxisInfo for &'a str {
 }
 
 
-
-///trait used to add X and Y type parameters to Into trait, so we can limit converted types
-pub trait  Convertable<X,Y,Z> : Into<Z>{}
-
-impl<X,Y> Convertable<X,Y, SeriesDataSource> for Vec<(X, Y)>
-where X: Into<DataValue>,
-      Y: Into<DataValue>{}
-
-
-impl<X,Y> Convertable<X,Y, SeriesDataSource> for Vec<(X, Y, String)>
-where X: Into<DataValue>,
-      Y: Into<DataValue>{}
-
-impl<X,Y> Convertable<X,Y,DatasetComponent> for Vec<(X, Y)>
-where X: Into<DataValue>,
-      Y: Into<DataValue>{}
-
-
-impl<X,Y> Convertable<X,Y,DatasetComponent> for Vec<(X, Y, String)>
-where X: Into<DataValue>,
-      Y: Into<DataValue>{}
-
-
-
 /// Builder for multi-line charts, inferring axis types from X and Y
 pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo>
 {
-    option: EChartsOption,
+    option: EChartsOption<X,Y>,
     _marker: PhantomData<(X, Y)>,
 }
 
 ///trait that provides regression methods that are only supported when both x and y are numeric
 pub trait RegressionChartBuilderExt<X, Y>: ChartBuilderExt<X, Y>
-where X: AxisInfo + ValueAxis + Into<DataValue>,
-      Y: AxisInfo + ValueAxis + Into<DataValue>
+where X: AxisInfo + ValueAxis + Serialize,
+      Y: AxisInfo + ValueAxis + Serialize
 {
     
     fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
@@ -180,7 +155,7 @@ where X: AxisInfo + ValueAxis + Into<DataValue>,
 
 
     /// Add a dataset with regression transformation
-    fn add_regression_series<TData:Convertable<X,Y, DatasetComponent>>(mut self, series_label: &str, data: TData,
+    fn add_regression_series<TData: Into<DatasetComponent<X,Y>>>(mut self, series_label: &str, data: TData,
                              method: RegressionMethod, order: Option<u32>) -> Self {
         // Create a dataset vector if it doesn't exist
         if self.option().dataset.is_none() {
@@ -245,23 +220,23 @@ where X: AxisInfo + ValueAxis + Into<DataValue>,
     }
 
     /// Add a linear regression dataset
-    fn add_linear_regression_series<TData:Convertable<X,Y, DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
+    fn add_linear_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Linear, None)
     }
 
     /// Add a polynomial regression dataset
-    fn add_polynomial_regression_series<TData:Convertable<X,Y, DatasetComponent>>(self, series_label: &str, data: TData, order: u32) -> Self {
+    fn add_polynomial_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData, order: u32) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Polynomial, Some(order))
     }
 
     /// Add an exponential regression dataset
-    fn add_exponential_regression_series<TData:Convertable<X,Y, DatasetComponent>>(self, series_label: &str, data: TData) -> Self
+    fn add_exponential_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData) -> Self
     {
         self.add_regression_series(series_label, data, RegressionMethod::Exponential, None)
     }
 
     /// Add a logarithmic regression dataset
-    fn add_logarithmic_regression_series<TData:Convertable<X,Y, DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
+    fn add_logarithmic_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Logarithmic, None)
     }
     
@@ -269,11 +244,11 @@ where X: AxisInfo + ValueAxis + Into<DataValue>,
 }
 
 
-pub trait ChartBuilderExt<X: AxisInfo, Y: AxisInfo>: Sized
-where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>
+pub trait ChartBuilderExt<X, Y>: Sized
+where X: AxisInfo+Serialize, Y: AxisInfo+Serialize
 {
 
-    fn option(&mut self) -> &mut EChartsOption;
+    fn option(&mut self) -> &mut EChartsOption<X,Y>;
     
     /// Set chart title
     fn title_str(mut self, title: &str) -> Self {
@@ -305,7 +280,7 @@ where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>
     }
 
     //add a dataset and get an index
-    fn add_dataset<TData:Into<DatasetComponent>>(mut self, data: TData) -> usize {
+    fn add_dataset<TData:Into<DatasetComponent<X,Y>>>(mut self, data: TData) -> usize {
         let index = self.option().dataset.as_mut().unwrap().len();
         self.option().dataset.as_mut().unwrap().push(data.into());
         index
@@ -352,7 +327,7 @@ where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>
     }
 
 
-    fn add_series<TData: Convertable<X,Y,SeriesDataSource>>(mut self, series_label:&str, data: TData, series_type: SeriesType) -> Self {
+    fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self, series_label:&str, data: TData, series_type: SeriesType) -> Self {
         self.option().series.as_mut().unwrap().push(
             Series::new(series_label,series_type,data.into())
         );
@@ -361,13 +336,13 @@ where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>
 
 
 
-    fn build(self, width: Size, height: Size) -> ScriptTemplate;
+    fn build(self, width: Size, height: Size) -> ScriptTemplate<X,Y>;
 }
 
 
 
 impl<X, Y>  ChartBuilder<X,Y>
-where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>{
+where X: AxisInfo, Y: AxisInfo {
 
     pub fn new() -> Self {
         let opt = EChartsOption {
@@ -397,16 +372,16 @@ where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>{
 
 
 impl<X, Y> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y>
-where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>{
-    fn option(&mut self) -> &mut EChartsOption {
+where X: AxisInfo+Serialize , Y: AxisInfo+Serialize {
+    fn option(&mut self) -> &mut EChartsOption<X,Y> {
         &mut self.option
     }
 
-    fn build(self, width: Size, height: Size) -> ScriptTemplate{
+    fn build(self, width: Size, height: Size) -> ScriptTemplate<X,Y>{
         ScriptTemplate::new(Uuid::new_v4().to_string(), width, height, self.option)
     }
 }
 
 
 impl <X, Y> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y>
-where X: ValueAxis + AxisInfo + Into<DataValue>, Y: ValueAxis + AxisInfo + Into<DataValue>{}
+where X: ValueAxis + AxisInfo+Serialize, Y: ValueAxis + AxisInfo+Serialize{}
