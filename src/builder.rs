@@ -157,22 +157,17 @@ where X: AxisInfo + ValueAxis + Into<DataValue>,
 
 
     /// Add a dataset with regression transformation
-    fn add_regression_series(mut self, series_label: &str, data: Vec<(X, Y)>,
+    fn add_regression_series<TData:Into<DatasetComponent>>(mut self, series_label: &str, data: TData,
                              method: RegressionMethod, order: Option<u32>) -> Self {
         // Create a dataset vector if it doesn't exist
         if self.option().dataset.is_none() {
             self.option().dataset = Some(Vec::new());
         }
 
-        // Convert the data to a format suitable for ECharts
-        let raw_data = data.into_iter()
-            .map(|(x, y)| [x.into(), y.into()])
-            .collect::<Vec<_>>();
-
         // Add source dataset
         let datasets = self.option().dataset.as_mut().unwrap();
         let source_index = datasets.len();
-        datasets.push(DatasetComponent::src(raw_data));
+        datasets.push(data.into());
 
 
         // Add regression transform dataset
@@ -227,22 +222,22 @@ where X: AxisInfo + ValueAxis + Into<DataValue>,
     }
 
     /// Add a linear regression dataset
-    fn add_linear_regression_series(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
+    fn add_linear_regression_series<TData:Into<DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Linear, None)
     }
 
     /// Add a polynomial regression dataset
-    fn add_polynomial_regression_series(self, series_label: &str, data: Vec<(X, Y)>, order: u32) -> Self {
+    fn add_polynomial_regression_series<TData:Into<DatasetComponent>>(self, series_label: &str, data: TData, order: u32) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Polynomial, Some(order))
     }
 
     /// Add an exponential regression dataset
-    fn add_exponential_regression_series(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
+    fn add_exponential_regression_series<TData:Into<DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Exponential, None)
     }
 
     /// Add a logarithmic regression dataset
-    fn add_logarithmic_regression_series(self, series_label: &str, data: Vec<(X, Y)>) -> Self {
+    fn add_logarithmic_regression_series<TData:Into<DatasetComponent>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Logarithmic, None)
     }
     
@@ -286,30 +281,15 @@ where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>
     }
 
     //add a dataset and get an index
-    fn add_dataset(mut self, data: Vec<(X, Y)>) -> usize {
+    fn add_dataset<TData:Into<DatasetComponent>>(mut self, data: TData) -> usize {
         let index = self.option().dataset.as_mut().unwrap().len();
-        self.option().dataset.as_mut().unwrap().push(DatasetComponent::src(
-            data.into_iter()
-                .map(|(x, y)| [x.into(), y.into()])
-                .collect::<Vec<_>>()
-        ));
-        index
-    }
-
-    ///add a dataset and get an index, dataset is labeled in this case
-    fn add_labeled_dataset(mut self, data: Vec<(X, Y, String)>) -> usize {
-        let index = self.option().dataset.as_mut().unwrap().len();
-        self.option().dataset.as_mut().unwrap().push(DatasetComponent::labelled_source(
-            data.into_iter()
-                .map(|(x, y, z)|  [x.into(), y.into(),z.into()])
-                .collect::<Vec<_>>()
-        ));
+        self.option().dataset.as_mut().unwrap().push(data.into());
         index
     }
 
     /// Add visualization for a dataset.
     /// If no datasets exist, or dataset_index is out of range, no datasets will be added
-    fn add_dataset_visualisation(mut self, series_label:&str,series_type: SeriesType, dataset_index: usize) -> Self {
+    fn add_dataset_visualisation(mut self, series_label:&str, series_type: SeriesType, dataset_index: usize) -> Self {
         let datasets = &self.option().dataset;
          if let Some(datasets) = datasets {
            if let Some(dataset) =  datasets.get(dataset_index){
@@ -347,13 +327,15 @@ where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>
         self
     }
 
-    /// Add a series; X and Y conversions ensure homogeneous types
-    fn add_series(mut self, series_label:&str, data: Vec<(X, Y)>, series_type: SeriesType) -> Self {
+
+    fn add_series<TData: Into<SeriesDataSource>>(mut self, series_label:&str, data: TData, series_type: SeriesType) -> Self {
         self.option().series.as_mut().unwrap().push(
-            Series::new(series_label,series_type,SeriesDataSource::from_value_pairs(data))
+            Series::new(series_label,series_type,data.into())
         );
         self
     }
+
+
 
     fn build(self, width: Size, height: Size) -> ScriptTemplate;
 }

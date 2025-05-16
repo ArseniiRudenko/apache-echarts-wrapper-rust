@@ -500,6 +500,35 @@ pub enum SeriesDataSource {
 }
 
 
+impl<X,Y> Into<SeriesDataSource> for Vec<(X, Y)>
+where X: Into<DataValue>,
+Y: Into<DataValue>
+{
+    fn into(self) -> SeriesDataSource {
+        SeriesDataSource::from_value_pairs(self)
+    }
+
+}
+
+impl<X,Y> Into<SeriesDataSource> for Vec<(X, Y, String)>
+where X: Into<DataValue>,
+Y: Into<DataValue>
+{
+    fn into(self) -> SeriesDataSource {
+        SeriesDataSource::from_tuples_with_label(self)
+    }
+}
+
+impl<X> Into<SeriesDataSource> for Vec<X>
+where X: Into<DataValue>
+{
+    fn into(self) -> SeriesDataSource {
+        SeriesDataSource::from_values(self)
+    }
+}
+
+
+
 impl SeriesDataSource {
     /// Creates a new SeriesDataSource that references a dataset by index
     pub fn from_dataset_index(index: usize) -> Self {
@@ -687,6 +716,27 @@ pub enum DatasetComponent {
     LabelledSource(LabelledSource),
     Transform(Transform)
 }
+
+
+impl<X,Y> Into<DatasetComponent> for Vec<(X,Y)>
+where X: Into<DataValue>,
+      Y: Into<DataValue>
+{
+    fn into(self) -> DatasetComponent {
+        DatasetComponent::src(self.into_iter().map(|(x,y)| [x.into(), y.into()]).collect())
+    }
+}
+
+impl<X,Y> Into<DatasetComponent> for Vec<(X,Y,String)>
+where X: Into<DataValue>,
+      Y: Into<DataValue>
+{
+    fn into(self) -> DatasetComponent {
+        DatasetComponent::labelled_source(self.into_iter().map(|(x,y,z)| [x.into(), y.into(), z.into()]).collect())
+    }
+}
+
+
 
 impl DatasetComponent {
     pub fn tr(transform: DatasetTransform,index: usize) -> Self{
