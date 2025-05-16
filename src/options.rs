@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::builder::AxisInfo;
 use crate::common::Percent;
-use crate::options::DatasetTransformType::Regression;
 use crate::options::DataVariant::NamedPair;
 
 /// Root object for ECharts configuration
@@ -640,14 +639,11 @@ pub enum DatasetTransformType {
 #[serde(rename_all = "camelCase")]
 pub struct DatasetTransform {
     /// Transform type
-    pub r#type: DatasetTransformType,
+    r#type: DatasetTransformType,
 
     /// Transform configuration
-    pub config: DatasetTransformConfig,
+    config: DatasetTransformConfig,
 
-    /// Additional raw transform options
-    #[serde(flatten)]
-    pub extra: Option<Value>,
 }
 
 
@@ -656,16 +652,14 @@ impl DatasetTransform {
     pub fn regression(config: RegressionConfig) -> Self {
         Self{
             r#type: DatasetTransformType::Regression,
-            config: DatasetTransformConfig::Regression(config),
-            extra: None,
+            config: DatasetTransformConfig::Regression(config)
         }
     }
 
     pub fn clustering(clustering_config: ClusteringConfig)->Self{
         Self{
             r#type: DatasetTransformType::Clustering,
-            config: DatasetTransformConfig::Clustering(clustering_config),
-            extra: None,
+            config: DatasetTransformConfig::Clustering(clustering_config)
         }
     }
 
