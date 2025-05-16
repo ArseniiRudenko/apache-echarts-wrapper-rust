@@ -112,15 +112,8 @@ impl<'a> AxisInfo for &'a str {
 }
 
 
-/// Builder for multi-line charts, inferring axis types from X and Y
-pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo>
-{
-    option: EChartsOption<X,Y>,
-    _marker: PhantomData<(X, Y)>,
-}
-
 ///trait that provides regression methods that are only supported when both x and y are numeric
-pub trait RegressionChartBuilderExt<X, Y>: ChartBuilderExt<X, Y>
+pub trait RegressionChartBuilder<X, Y>: ChartBuilder<X, Y>
 where X: AxisInfo + ValueAxis + Serialize,
       Y: AxisInfo + ValueAxis + Serialize
 {
@@ -129,7 +122,7 @@ where X: AxisInfo + ValueAxis + Serialize,
         self.add_regression_dataset(data_source_index, RegressionMethod::Linear, None)
     }
 
-    fn add_polynomial_regression_dataset(self, data_source_index: usize, order: u32) -> usize {
+    fn add_polynomial_regression_dataset(self, data_source_index: usize, order: u8) -> usize {
         self.add_regression_dataset(data_source_index, RegressionMethod::Polynomial, Some(order))
     }
 
@@ -137,33 +130,29 @@ where X: AxisInfo + ValueAxis + Serialize,
         self.add_regression_dataset(data_source_index, RegressionMethod::Exponential, None)
     }
 
-    fn add_regression_dataset(mut self, data_source_index: usize, method: RegressionMethod, order: Option<u32>) -> usize {
-        let index = self.option().dataset.as_mut().unwrap().len();
+    fn add_regression_dataset(mut self, data_source_index: usize, method: RegressionMethod, order: Option<u8>) -> usize {
+        let index = self.options().dataset.as_mut().unwrap().len();
         let regression_config = RegressionConfig {
             method: method.clone(),
             order,
             extra: None,
         };
-        let dataset = DatasetTransform{
-            r#type: DatasetTransformType::Regression,
-            config: Some(regression_config),
-            extra: None,
-        };
-        self.option().dataset.as_mut().unwrap().push(DatasetComponent::tr(dataset, data_source_index));
+        let dataset = DatasetTransform::regression(regression_config);
+        self.options().dataset.as_mut().unwrap().push(DatasetComponent::tr(dataset, data_source_index));
         index
     }
 
 
     /// Add a dataset with regression transformation
     fn add_regression_series<TData: Into<DatasetComponent<X,Y>>>(mut self, series_label: &str, data: TData,
-                             method: RegressionMethod, order: Option<u32>) -> Self {
+                             method: RegressionMethod, order: Option<u8>) -> Self {
         // Create a dataset vector if it doesn't exist
-        if self.option().dataset.is_none() {
-            self.option().dataset = Some(Vec::new());
+        if self.options().dataset.is_none() {
+            self.options().dataset = Some(Vec::new());
         }
 
         // Add source dataset
-        let datasets = self.option().dataset.as_mut().unwrap();
+        let datasets = self.options().dataset.as_mut().unwrap();
         let source_index = datasets.len();
         datasets.push(data.into());
 
@@ -181,19 +170,15 @@ where X: AxisInfo + ValueAxis + Serialize,
             regression_config.order = order;
         }
 
-
-        datasets.push(DatasetComponent::tr(
-            DatasetTransform {
-                r#type: DatasetTransformType::Regression,
-                config: Some(regression_config),
-                extra: None
-            },
+        datasets.push(
+            DatasetComponent::tr(
+            DatasetTransform::regression(regression_config),
             source_index
         )
         );
 
         // Add scatter series for original data
-        self.option().series.as_mut().unwrap().push(Series {
+        self.options().series.as_mut().unwrap().push(Series {
             r#type: Some(SeriesType::Scatter),
             name: Some(format!("{} (data)", series_label)),
             smooth: None,
@@ -205,7 +190,7 @@ where X: AxisInfo + ValueAxis + Serialize,
         });
 
         // Add line series for regression
-        self.option().series.as_mut().unwrap().push(Series {
+        self.options().series.as_mut().unwrap().push(Series {
             r#type: Some(SeriesType::Line),
             name: Some(format!("{} (regression)", series_label)),
             smooth: Some(true),
@@ -225,7 +210,7 @@ where X: AxisInfo + ValueAxis + Serialize,
     }
 
     /// Add a polynomial regression dataset
-    fn add_polynomial_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData, order: u32) -> Self {
+    fn add_polynomial_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData, order: u8) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Polynomial, Some(order))
     }
 
@@ -239,62 +224,60 @@ where X: AxisInfo + ValueAxis + Serialize,
     fn add_logarithmic_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Logarithmic, None)
     }
-    
-    
 }
 
 
-pub trait ChartBuilderExt<X, Y>: Sized
+pub trait ChartBuilder<X, Y>: Sized
 where X: AxisInfo+Serialize, Y: AxisInfo+Serialize
 {
 
-    fn option(&mut self) -> &mut EChartsOption<X,Y>;
+    fn options(&mut self) -> &mut EChartsOption<X,Y>;
     
     /// Set chart title
     fn title_str(mut self, title: &str) -> Self {
-        let t =  self.option().title.get_or_insert_default();
+        let t =  self.options().title.get_or_insert_default();
         t.left = Some(Position::Keyword(PositionKeyword::Center));
         t.text = Some(title.to_string());
         self
     }
 
     fn subtitle_str(mut self, subtitle: &str) -> Self {
-        self.option().title.get_or_insert_default().sub_text = Some(subtitle.to_string());
+        self.options().title.get_or_insert_default().sub_text = Some(subtitle.to_string());
         self
     }
 
     fn title(mut self, title: Title) -> Self {
-        self.option().title = Some(title);
+        self.options().title = Some(title);
         self
     }
 
 
     fn x_axis_label(mut self, x: &str) -> Self {
-        self.option().x_axis.name = Some(x.to_string());
+        self.options().x_axis.name = Some(x.to_string());
         self
     }
 
     fn y_axis_label(mut self, y: &str) -> Self {
-        self.option().y_axis.name = Some(y.to_string());
+        self.options().y_axis.name = Some(y.to_string());
         self
     }
 
     //add a dataset and get an index
     fn add_dataset<TData:Into<DatasetComponent<X,Y>>>(mut self, data: TData) -> usize {
-        let index = self.option().dataset.as_mut().unwrap().len();
-        self.option().dataset.as_mut().unwrap().push(data.into());
+        let index = self.options().dataset.as_mut().unwrap().len();
+        self.options().dataset.as_mut().unwrap().push(data.into());
         index
     }
 
     /// Add visualization for a dataset.
     /// If no datasets exist, or dataset_index is out of range, no datasets will be added
     fn add_dataset_visualisation(mut self, series_label:&str, series_type: SeriesType, dataset_index: usize) -> Self {
-        let datasets = &self.option().dataset;
+        let datasets = &self.options().dataset;
          if let Some(datasets) = datasets {
            if let Some(dataset) =  datasets.get(dataset_index){
                match dataset {
                    DatasetComponent::Source(_) | DatasetComponent::Transform(_) => {
-                       self.option().series.as_mut().unwrap().push(Series {
+                       self.options().series.as_mut().unwrap().push(Series {
                            r#type: Some(series_type),
                            name: Some(format!("{}", series_label)),
                            smooth: Some(true),
@@ -306,7 +289,7 @@ where X: AxisInfo+Serialize, Y: AxisInfo+Serialize
                        });
                    }
                    DatasetComponent::LabelledSource(_) => {
-                       self.option().series.as_mut().unwrap().push(Series {
+                       self.options().series.as_mut().unwrap().push(Series {
                            r#type: Some(series_type),
                            name: Some(format!("{}", series_label)),
                            smooth: Some(true),
@@ -328,7 +311,7 @@ where X: AxisInfo+Serialize, Y: AxisInfo+Serialize
 
 
     fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self, series_label:&str, data: TData, series_type: SeriesType) -> Self {
-        self.option().series.as_mut().unwrap().push(
+        self.options().series.as_mut().unwrap().push(
             Series::new(series_label,series_type,data.into())
         );
         self
@@ -341,11 +324,11 @@ where X: AxisInfo+Serialize, Y: AxisInfo+Serialize
 
 
 
-impl<X, Y>  ChartBuilder<X,Y>
+impl<X, Y>  EChartsOption<X,Y>
 where X: AxisInfo, Y: AxisInfo {
 
     pub fn new() -> Self {
-        let opt = EChartsOption {
+        Self {
             title: None,
             tooltip: Some(Tooltip {
                 show: true,
@@ -364,24 +347,22 @@ where X: AxisInfo, Y: AxisInfo {
             x_axis: Axis { r#type: Some(X::axis_type()), name: None, data: None, extra: None },
             y_axis: Axis { r#type: Some(Y::axis_type()), name: None, data: None, extra: None },
             series: Some(Vec::new()),
-        };
-        Self { option: opt, _marker: Default::default() }
+        }
     }
-    
 }
 
 
-impl<X, Y> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y>
+impl<X, Y> ChartBuilder<X, Y> for  EChartsOption<X, Y>
 where X: AxisInfo+Serialize , Y: AxisInfo+Serialize {
-    fn option(&mut self) -> &mut EChartsOption<X,Y> {
-        &mut self.option
+    fn options(&mut self) -> &mut EChartsOption<X,Y> {
+        self
     }
 
     fn build(self, width: Size, height: Size) -> ScriptTemplate<X,Y>{
-        ScriptTemplate::new(Uuid::new_v4().to_string(), width, height, self.option)
+        ScriptTemplate::new(Uuid::new_v4().to_string(), width, height, self)
     }
 }
 
 
-impl <X, Y> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y>
+impl <X, Y> RegressionChartBuilder<X, Y> for EChartsOption<X, Y>
 where X: ValueAxis + AxisInfo+Serialize, Y: ValueAxis + AxisInfo+Serialize{}

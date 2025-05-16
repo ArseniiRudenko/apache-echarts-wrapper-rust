@@ -5,14 +5,13 @@ pub mod common;
 
 pub use builder::{
     ChartBuilder,
-    ChartBuilderExt,
-    RegressionChartBuilderExt,
+    RegressionChartBuilder,
 };
 
 #[cfg(test)]
 mod tests {
-    use crate::builder::{ChartBuilder, ChartBuilderExt, RegressionChartBuilderExt};
-    use crate::options::SeriesType;
+    use crate::builder::{ChartBuilder, RegressionChartBuilder};
+    use crate::options::{EChartsOption, SeriesType};
     use crate::templates::OnePage;
     use sailfish::TemplateSimple;
     use std::net::TcpListener;
@@ -23,7 +22,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let chart = ChartBuilder::<f64, &str>::new()
+        let chart = EChartsOption::<f64, &str>::new()
             .title_str("Something interesting")
             .add_series(
                 "fist_set",
@@ -36,7 +35,7 @@ mod tests {
             )
             .build(Size::pixels(600),Size::pixels(400));
 
-        let numeric_chart = ChartBuilder::<f64, f64>::new()
+        let numeric_chart = EChartsOption::<f64, f64>::new()
             .title_str("Something completely different")
             .add_linear_regression_series(
                 "regression set2",

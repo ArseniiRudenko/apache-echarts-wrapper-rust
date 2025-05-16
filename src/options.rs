@@ -1,12 +1,14 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::builder::AxisInfo;
 use crate::common::Percent;
+use crate::options::DatasetTransformType::Regression;
 use crate::options::DataVariant::NamedPair;
 
 /// Root object for ECharts configuration
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct EChartsOption<X,Y> {
+pub struct EChartsOption<X: AxisInfo,Y: AxisInfo> {
     /// Chart title options
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<Title>,
@@ -619,7 +621,6 @@ impl<X,Y> DatasetComponent<X,Y> {
             }
         )
     }
-
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -627,8 +628,11 @@ impl<X,Y> DatasetComponent<X,Y> {
 pub enum DatasetTransformType {
     Filter,
     Sort,
+    Boxplot,
     #[serde(rename = "ecStat:regression")]
-    Regression
+    Regression,
+    #[serde(rename = "ecStat:clustering")]
+    Clustering
 }
 
 /// Transform applied to a dataset
@@ -639,15 +643,46 @@ pub struct DatasetTransform {
     pub r#type: DatasetTransformType,
 
     /// Transform configuration
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub config: Option<RegressionConfig>,
+    pub config: DatasetTransformConfig,
 
     /// Additional raw transform options
     #[serde(flatten)]
     pub extra: Option<Value>,
 }
 
-/// Regression methods supported by ecStat
+
+impl DatasetTransform {
+
+    pub fn regression(config: RegressionConfig) -> Self {
+        Self{
+            r#type: DatasetTransformType::Regression,
+            config: DatasetTransformConfig::Regression(config),
+            extra: None,
+        }
+    }
+
+    pub fn clustering(clustering_config: ClusteringConfig)->Self{
+        Self{
+            r#type: DatasetTransformType::Clustering,
+            config: DatasetTransformConfig::Clustering(clustering_config),
+            extra: None,
+        }
+    }
+
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+enum DatasetTransformConfig {
+    Regression(RegressionConfig),
+    Clustering(ClusteringConfig),
+}
+
+
+
+
+/// regression methods supported by ecStat
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum RegressionMethod {
@@ -661,14 +696,32 @@ pub enum RegressionMethod {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RegressionConfig {
-    /// Regression method
+    /// regression method
     pub method: RegressionMethod,
 
     /// Polynomial order (only used when method is Polynomial)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub order: Option<u32>,
+    pub order: Option<u8>,
 
     /// Additional raw regression config options
     #[serde(flatten)]
     pub extra: Option<Value>,
+}
+
+
+
+/// Configuration for clustering transforms
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ClusteringConfig {
+
+    ///the number of clusters to generate must be greater than 1
+    pub cluster_count: u8,
+
+    ///dimension to which the cluster index will be written
+    pub output_cluster_index_dimension: u8,
+
+    /// dimensions of source data that will be used in calculation of a cluster
+    pub dimensions : Option<Vec<usize>>,
+
 }
