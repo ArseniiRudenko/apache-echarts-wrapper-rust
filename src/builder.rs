@@ -1,28 +1,25 @@
 use crate::common::Size;
-use crate::options::{Axis, AxisPointer, AxisPointerType, AxisType, DataItem, DataPointSymbol, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title, Tooltip, TooltipTrigger};
+use crate::options::{Axis, AxisPointer, AxisPointerType, AxisType, DataPointSymbol, DataValue, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title, Tooltip, TooltipTrigger};
 use crate::templates::ScriptTemplate;
 use std::marker::PhantomData;
+use serde_json::json;
 use uuid::Uuid;
+
+
 
 
 pub trait AxisInfo {
     fn axis_type() -> AxisType;
-
-    fn into_data_value(self) -> DataValue;
     
 }
 
-///Trait that captures types that have AxisType as Value on the type level. 
+///Trait that captures types that have AxisType as Value on the type level.
 ///That will catch and prevent user from trying to create regression charts on category data
 ///(which is not supported but will not cause an error, instead the chart just won't render)
 pub trait ValueAxis : AxisInfo {}
 
 impl AxisInfo for u128 {
-
     fn axis_type() -> AxisType { AxisType::Value }
-
-    fn into_data_value(self) -> DataValue { DataValue::U128(self) }
-    
 }
 
 impl ValueAxis for u128 {}
@@ -30,7 +27,6 @@ impl ValueAxis for u128 {}
 impl AxisInfo for i128 {
 
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::I128(self) }
 }
 
 impl ValueAxis for i128 {}
@@ -38,99 +34,82 @@ impl ValueAxis for i128 {}
 
 impl AxisInfo for i32 {
     fn axis_type() -> AxisType { AxisType::Value }
-
-    fn into_data_value(self) -> DataValue { DataValue::I32(self) }
 }
 
 impl ValueAxis for i32 {}
 
 impl AxisInfo for u32 {
     fn axis_type() -> AxisType { AxisType::Value }
-
-    fn into_data_value(self) -> DataValue { DataValue::U32(self) }
 }
 
 impl ValueAxis for u32 {}
 
 impl AxisInfo for i64 {
     fn axis_type() -> AxisType { AxisType::Value }
-
-    fn into_data_value(self) -> DataValue { DataValue::I64(self) }
 }
 
 impl ValueAxis for i64 {}
 
 impl AxisInfo for u64 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::U64(self) }
 }
 
 impl ValueAxis for u64 {}
 
 impl AxisInfo for i16 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::I16(self) }
 }
 
 impl ValueAxis for i16 {}
 
 impl AxisInfo for u16 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::U16(self) }
 }
 
 impl ValueAxis for u16 {}
 
 impl AxisInfo for i8 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::I8(self) }
 }
 
 impl ValueAxis for i8 {}
 
 impl AxisInfo for u8 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::U8(self) }
 }
 
 impl ValueAxis for u8 {}
 
 impl AxisInfo for f32 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::F32(self) }
 }
 
 impl ValueAxis for f32 {}
 
 impl AxisInfo for f64 {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::F64(self) }
 }
 
 impl ValueAxis for f64 {}
 
 impl AxisInfo for usize {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::Usize(self) }
 }
 
 impl ValueAxis for usize {}
 
 impl AxisInfo for isize {
     fn axis_type() -> AxisType { AxisType::Value }
-    fn into_data_value(self) -> DataValue { DataValue::Isize(self) }
 }
 
 impl ValueAxis for isize {}
 
 impl AxisInfo for String {
     fn axis_type() -> AxisType { AxisType::Category }
-    fn into_data_value(self) -> DataValue { DataValue::String(self) }
 }
 
 impl<'a> AxisInfo for &'a str {
     fn axis_type() -> AxisType { AxisType::Category }
-    fn into_data_value(self) -> DataValue { DataValue::String(self.to_string()) }
 }
 
 
@@ -144,8 +123,8 @@ pub struct ChartBuilder<X: AxisInfo, Y: AxisInfo>
 
 ///trait that provides regression methods that are only supported when both x and y are numeric
 pub trait RegressionChartBuilderExt<X, Y>: ChartBuilderExt<X, Y>
-where X: AxisInfo + ValueAxis,
-      Y: AxisInfo + ValueAxis
+where X: AxisInfo + ValueAxis + Into<DataValue>,
+      Y: AxisInfo + ValueAxis + Into<DataValue>
 {
     
     fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
@@ -187,7 +166,7 @@ where X: AxisInfo + ValueAxis,
 
         // Convert the data to a format suitable for ECharts
         let raw_data = data.into_iter()
-            .map(|(x, y)| [x.into_data_value(), y.into_data_value()])
+            .map(|(x, y)| [x.into(), y.into()])
             .collect::<Vec<_>>();
 
         // Add source dataset
@@ -272,7 +251,7 @@ where X: AxisInfo + ValueAxis,
 
 
 pub trait ChartBuilderExt<X: AxisInfo, Y: AxisInfo>: Sized
-where X: AxisInfo, Y: AxisInfo
+where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>
 {
 
     fn option(&mut self) -> &mut EChartsOption;
@@ -311,33 +290,67 @@ where X: AxisInfo, Y: AxisInfo
         let index = self.option().dataset.as_mut().unwrap().len();
         self.option().dataset.as_mut().unwrap().push(DatasetComponent::src(
             data.into_iter()
-                .map(|(x, y)| [x.into_data_value(), y.into_data_value()])
+                .map(|(x, y)| [x.into(), y.into()])
                 .collect::<Vec<_>>()
         ));
         index
     }
 
+    ///add a dataset and get an index, dataset is labeled in this case
+    fn add_labeled_dataset(mut self, data: Vec<(X, Y, String)>) -> usize {
+        let index = self.option().dataset.as_mut().unwrap().len();
+        self.option().dataset.as_mut().unwrap().push(DatasetComponent::labelled_source(
+            data.into_iter()
+                .map(|(x, y, z)|  [x.into(), y.into(),z.into()])
+                .collect::<Vec<_>>()
+        ));
+        index
+    }
+
+    /// Add visualization for a dataset.
+    /// If no datasets exist, or dataset_index is out of range, no datasets will be added
     fn add_dataset_visualisation(mut self, series_label:&str,series_type: SeriesType, dataset_index: usize) -> Self {
-        self.option().series.as_mut().unwrap().push(Series {
-            r#type: Some(series_type),
-            name: Some(format!("{}", series_label)),
-            smooth: Some(true),
-            area_style: None,
-            symbol: None,
-            symbol_size: None,
-            data: SeriesDataSource::DatasetIndex(dataset_index),
-            extra: None
-        });
+        let datasets = &self.option().dataset;
+         if let Some(datasets) = datasets {
+           if let Some(dataset) =  datasets.get(dataset_index){
+               match dataset {
+                   DatasetComponent::Source(_) | DatasetComponent::Transform(_) => {
+                       self.option().series.as_mut().unwrap().push(Series {
+                           r#type: Some(series_type),
+                           name: Some(format!("{}", series_label)),
+                           smooth: Some(true),
+                           area_style: None,
+                           symbol: None,
+                           symbol_size: None,
+                           data: SeriesDataSource::DatasetIndex(dataset_index),
+                           extra: None
+                       });
+                   }
+                   DatasetComponent::LabelledSource(_) => {
+                       self.option().series.as_mut().unwrap().push(Series {
+                           r#type: Some(series_type),
+                           name: Some(format!("{}", series_label)),
+                           smooth: Some(true),
+                           area_style: None,
+                           symbol: None,
+                           symbol_size: None,
+                           data: SeriesDataSource::DatasetIndex(dataset_index),
+                           extra: Some(json!(
+                               {"encode": {"tooltip": [2,1], "x": 0, "y": 1 }}
+                           ))
+                       });
+                   }
+               }
+
+           }
+        }
         self
     }
 
     /// Add a series; X and Y conversions ensure homogeneous types
     fn add_series(mut self, series_label:&str, data: Vec<(X, Y)>, series_type: SeriesType) -> Self {
-        let data_items: Vec<DataItem> =data.into_iter()
-            .map(|(x, y)| DataItem::Pair([x.into_data_value(), y.into_data_value()]))
-            .collect();
         self.option().series.as_mut().unwrap().push(
-            Series::new(series_label,series_type,SeriesDataSource::Data(data_items))
+            Series::new(series_label,series_type,SeriesDataSource::from_value_pairs(data))
         );
         self
     }
@@ -347,7 +360,8 @@ where X: AxisInfo, Y: AxisInfo
 
 
 
-impl<X: AxisInfo, Y: AxisInfo>  ChartBuilder<X,Y> {
+impl<X, Y>  ChartBuilder<X,Y>
+where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>{
 
     pub fn new() -> Self {
         let opt = EChartsOption {
@@ -376,7 +390,8 @@ impl<X: AxisInfo, Y: AxisInfo>  ChartBuilder<X,Y> {
 }
 
 
-impl<X: AxisInfo, Y: AxisInfo> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {
+impl<X, Y> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y>
+where X: AxisInfo + Into<DataValue>, Y: AxisInfo + Into<DataValue>{
     fn option(&mut self) -> &mut EChartsOption {
         &mut self.option
     }
@@ -387,4 +402,5 @@ impl<X: AxisInfo, Y: AxisInfo> ChartBuilderExt<X, Y> for  ChartBuilder<X, Y> {
 }
 
 
-impl <X: ValueAxis + AxisInfo, Y: ValueAxis + AxisInfo> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y> {}
+impl <X, Y> RegressionChartBuilderExt<X, Y> for ChartBuilder<X, Y>
+where X: ValueAxis + AxisInfo + Into<DataValue>, Y: ValueAxis + AxisInfo + Into<DataValue>{}
