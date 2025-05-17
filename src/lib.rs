@@ -25,13 +25,14 @@ mod tests {
         let chart = EChartsOption::<f64, &str>::new()
             .title_str("Something interesting")
             .add_series(
+                SeriesType::Line,
                 "fist_set",
                 vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
-                ,SeriesType::Line)
+            )
             .add_series(
+                SeriesType::Line,
                 "second_set",
                 vec![(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
-                ,SeriesType::Line
             )
             .build(Size::pixels(600),Size::pixels(400));
 

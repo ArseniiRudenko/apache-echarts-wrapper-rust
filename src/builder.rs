@@ -309,7 +309,7 @@ where X: AxisInfo+Serialize, Y: AxisInfo+Serialize
     }
 
 
-    fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self, series_label:&str, data: TData, series_type: SeriesType) -> Self {
+    fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self,series_type: SeriesType, series_label:&str, data: TData) -> Self {
         self.options().series.as_mut().unwrap().push(
             Series::new(series_label,series_type,data.into())
         );
