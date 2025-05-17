@@ -1,7 +1,6 @@
 use crate::common::Size;
-use crate::options::{Axis, AxisPointer, AxisPointerType, AxisType, DataPointSymbol, DatasetComponent, DatasetTransform, DatasetTransformType, EChartsOption, Position, PositionKeyword, RegressionConfig, RegressionMethod, Series, SeriesDataSource, SeriesType, Title, Tooltip, TooltipTrigger};
+use crate::options::*;
 use crate::templates::ScriptTemplate;
-use std::marker::PhantomData;
 use serde::Serialize;
 use serde_json::json;
 use uuid::Uuid;
@@ -12,7 +11,7 @@ pub trait AxisInfo {
     
 }
 
-///Trait that captures types that have AxisType as Value on the type level.
+///Trait that captures that rust type is of Value AxisType on the type level.
 ///That will catch and prevent user from trying to create regression charts on category data
 ///(which is not supported but will not cause an error, instead the chart just won't render)
 pub trait ValueAxis : AxisInfo {}

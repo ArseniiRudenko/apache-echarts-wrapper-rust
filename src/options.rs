@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::builder::AxisInfo;
 use crate::common::Percent;
-use crate::options::DataVariant::NamedPair;
 
 /// Root object for ECharts configuration
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -400,9 +399,9 @@ impl<X,Y> Into<SeriesDataSource<X,Y>> for Vec<(X, Y, String)>
     }
 }
 
-impl<X> Into<SeriesDataSource<X,X>> for Vec<X>
+impl<X,Y> Into<SeriesDataSource<X,Y>> for Vec<X>
 {
-    fn into(self) -> SeriesDataSource<X,X> {
+    fn into(self) -> SeriesDataSource<X,Y> {
         SeriesDataSource::from_values(self)
     }
 }
@@ -413,18 +412,18 @@ impl<X,Y> SeriesDataSource<X,Y> {
         Self::DatasetIndex(index)
     }
 
-    /// Creates a SeriesDataSource with simple array of values
-    pub fn with_values(values: Vec<X>) -> Self {
+    /// Creates a SeriesDataSource with a simple array of values
+    pub fn from_values(values: Vec<X>) -> Self {
         Self::Data(DataVariant::Data(values))
     }
 
-    /// Creates a SeriesDataSource with array of [x,y] pairs
+    /// Creates a SeriesDataSource with an array of [x,y] pairs
     pub fn from_pairs(pairs: Vec<(X,Y)>) -> Self {
         Self::Data(DataVariant::Pair(pairs))
     }
 
    pub fn from_named_value_pairs(named_pairs: Vec<NamedValuePair<X,Y>>) -> Self{
-       Self::Data(NamedPair(named_pairs))
+       Self::Data(DataVariant::NamedPair(named_pairs))
    }
 
 
@@ -442,7 +441,6 @@ impl<X,Y> SeriesDataSource<X,Y> {
         Self::with_named_values(data_named_values)
     }
 
-
     /// Creates a SeriesDataSource with named pairs
     pub fn from_tuples_with_label(values: Vec<(X, Y, String)>) -> Self
     {
@@ -450,12 +448,6 @@ impl<X,Y> SeriesDataSource<X,Y> {
             .map(|(x, y,label) | NamedValuePair::new(x.into(), y.into(),label))
             .collect();
         Self::from_named_value_pairs(data_named_pairs)
-    }
-
-    /// Helper method to create a SeriesDataSource from a vector of any type that can be converted to DataValue
-    pub fn from_values(values: Vec<X>) -> Self
-    {
-        Self::with_values(values.into_iter().map(|v| v.into()).collect())
     }
 
 }
@@ -520,8 +512,6 @@ impl<X,Y> Series <X,Y>{
             extra: None,
         }
     }
-
-
 }
 
 
@@ -574,7 +564,7 @@ pub struct LabelledSource<X,Y>{
 pub enum DatasetComponent<X,Y> {
     Source(Source<X,Y>),
     LabelledSource(LabelledSource<X,Y>),
-    Transform(Transform)
+    Transform(Vec<Transform>)
 }
 
 
@@ -595,12 +585,24 @@ impl<X,Y> Into<DatasetComponent<X,Y>> for Vec<(X,Y,String)>
 
 
 impl<X,Y> DatasetComponent<X,Y> {
-    pub fn tr(transform: DatasetTransform,index: usize) -> Self{
+    pub fn tr(transform: DatasetTransform, index: usize) -> Self{
+        Self::Transform(vec![Transform {
+            transform,
+            from_dataset_index: Some(index),
+        }])
+    }
+
+    pub fn trs(transform: Vec<DatasetTransform>, index: usize) -> Self{
         Self::Transform(
-            Transform {
-                transform,
-                from_dataset_index: Some(index),
-            }
+            transform
+                .into_iter()
+                .map(|tr|
+                    Transform {
+                        transform:tr,
+                        from_dataset_index: Some(index)
+                    }
+                )
+            .collect()
         )
     }
 
@@ -663,6 +665,13 @@ impl DatasetTransform {
         }
     }
 
+    pub fn sort(sort_config: SortConfig) -> Self {
+        Self{
+            r#type: DatasetTransformType::Sort,
+            config: DatasetTransformConfig::Sort(sort_config)
+        }
+    }
+
 }
 
 
@@ -671,9 +680,8 @@ impl DatasetTransform {
 enum DatasetTransformConfig {
     Regression(RegressionConfig),
     Clustering(ClusteringConfig),
+    Sort(SortConfig)
 }
-
-
 
 
 /// regression methods supported by ecStat
@@ -685,6 +693,21 @@ pub enum RegressionMethod {
     Logarithmic,
     Polynomial,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SortConfig {
+    dimension: u8,
+    order : Order
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum Order {
+    Asc,
+    Desc
+}
+
 
 /// Configuration for regression transforms
 #[derive(Serialize, Deserialize, Debug, Clone)]
