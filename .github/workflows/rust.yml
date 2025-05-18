@@ -49,11 +49,11 @@ jobs:
         run: |
           BRANCH="${{ needs.build-test.head-ref }}"
           if [[ "$BRANCH" == release/* ]]; then
-            echo "::set-output name=level::major"
+            echo "level=major" >> "$GITHUB_OUTPUT"
           elif [[ "$BRANCH" == feature/* ]]; then
-            echo "::set-output name=level::minor"
+            echo "level=minor" >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=level::patch"
+            echo "level=patch" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Read current version from Cargo.toml
@@ -62,7 +62,7 @@ jobs:
           VERSION=$(grep '^version' Cargo.toml \
             | head -n1 \
             | sed -E 's/version *= *"([^\"]+)"/\1/')
-          echo "::set-output name=current::$VERSION"
+          echo "current=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Bump semver
         id: bump
