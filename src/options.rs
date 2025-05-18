@@ -756,7 +756,7 @@ pub struct RegressionConfig {
 #[serde(rename_all = "camelCase")]
 pub struct ClusteringConfig {
 
-    ///the number of clusters to generate must be greater than 1
+    /// The number of clusters to generate (must be > 1).
     pub cluster_count: u8,
 
     ///dimension to which the cluster index will be written
