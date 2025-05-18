@@ -13,7 +13,7 @@ Then populate it with chart data. You can add more than one.
 ```
  chart.add_series(
         SeriesType::Line,
-        "fist_set",
+        "first_set",
         vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
       )
       .add_series(
