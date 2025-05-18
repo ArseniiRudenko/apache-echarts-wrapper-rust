@@ -343,8 +343,8 @@ where X: AxisInfo, Y: AxisInfo {
                 })
             }),
             legend: None, grid: None, extra: None, dataset: None,
-            x_axis: Axis { r#type: Some(X::axis_type()), name: None, data: None, extra: None },
-            y_axis: Axis { r#type: Some(Y::axis_type()), name: None, data: None, extra: None },
+            x_axis: Axis::default(),
+            y_axis: Axis::default(),
             series: Some(Vec::new()),
         }
     }

@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::builder::AxisInfo;
@@ -306,12 +307,11 @@ pub struct  NamedValue<X>{
 
 
 /// Axis (cartesian)
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Axis<T> {
+pub struct Axis<T:AxisInfo> {
     /// Axis type: value, category, time, log
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<AxisType>,
+    pub r#type: AxisType,
 
     /// Axis name
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -325,6 +325,30 @@ pub struct Axis<T> {
     #[serde(flatten)]
     pub extra: Option<Value>,
 }
+
+impl<T:AxisInfo> Default for Axis<T> {
+    fn default() -> Self {
+        Self{
+            r#type: T::axis_type(),
+            name: None,
+            data: None,
+            extra: None,
+        }
+    }
+}
+
+
+impl<T:AxisInfo> Axis<T>{
+    pub fn new(name: &str)-> Self{
+        Self{
+            r#type: T::axis_type(),
+            name: Some(name.to_string()),
+            data: None,
+            extra: None,
+        }
+    }
+}
+
 
 /// Available series types in ECharts
 #[derive(Serialize, Deserialize, Debug, Clone)]
