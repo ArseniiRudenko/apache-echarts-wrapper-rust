@@ -2,6 +2,7 @@
 <div id="<%= chart_target_id %>" style="width: <%- width  %>;height:<%- height %>;"></div>
 <script type="text/javascript">
     echarts.registerTransform(ecStat.transform.regression);
+    echarts.registerTransform(ecStat.transform.clustering);
     var chartDom = document.getElementById('<%= chart_target_id %>');
     var myChart = echarts.init(chartDom);
     var option;

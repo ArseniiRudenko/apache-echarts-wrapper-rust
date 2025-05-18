@@ -1,15 +1,13 @@
-//! Auto-generated Rust bindings for Apache ECharts `option` JSON configuration.
-//! This module provides strongly-typed structs for commonly used configuration options.
-//! Extend as needed for additional ECharts features.
-
+use std::fmt::Debug;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::builder::AxisInfo;
 use crate::common::Percent;
 
 /// Root object for ECharts configuration
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct EChartsOption {
+pub struct EChartsOption<X: AxisInfo,Y: AxisInfo> {
     /// Chart title options
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<Title>,
@@ -28,17 +26,17 @@ pub struct EChartsOption {
 
     /// Dataset component for providing data
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dataset: Option<Vec<DatasetComponent>>,
+    pub dataset: Option<Vec<DatasetComponent<X,Y>>>,
 
     /// X-axis options (Cartesian charts)
-    pub x_axis: Axis,
+    pub x_axis: Axis<X>,
 
     /// Y-axis options (Cartesian charts)
-    pub y_axis: Axis,
+    pub y_axis: Axis<Y>,
 
     /// Series data
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub series: Option<Vec<Series>>,
+    pub series: Option<Vec<Series<X,Y>>>,
 
     /// Additional raw options not covered by this binding
     #[serde(flatten)]
@@ -280,47 +278,40 @@ pub enum AxisType {
     Unknown,
 }
 
-/// Primitive values allowed in data (string, int, float)
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum DataValue {
-    Isize(isize),
-    I128(i128),
-    I64(i64),
-    I32(i32),
-    I16(i16),
-    I8(i8),
-    Usize(usize),
-    U128(u128),
-    U64(u64),
-    U32(u32),
-    U16(u16),
-    U8(u8),
-    F32(f32),
-    F64(f64),
-    String(String),
+
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct  NamedValuePair<X,Y>{
+    value: (X,Y),
+    name: String,
 }
 
+impl<X,Y> NamedValuePair<X,Y> {
+    pub fn new(x: X, y: Y, name: String) -> Self {
+        Self{
+            value: (x, y),
+            name,
+        }
+    }
 
+}
 
-/// A single data item: either a single value or a tuple [x, y]
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum DataItem {
-    /// Single dimension data (string/int/float)
-    Single(DataValue),
-    /// Two-dimensional data: [x, y]
-    Pair([DataValue; 2]),
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct  NamedValue<X>{
+    value: X,
+    name: String,
 }
 
 
 /// Axis (cartesian)
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Axis {
+pub struct Axis<T:AxisInfo> {
     /// Axis type: value, category, time, log
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<AxisType>,
+    pub r#type: AxisType,
 
     /// Axis name
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -328,12 +319,36 @@ pub struct Axis {
 
     /// Data for category axis
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<Vec<DataValue>>,
+    pub data: Option<Vec<T>>,
 
     /// Additional raw axis options
     #[serde(flatten)]
     pub extra: Option<Value>,
 }
+
+impl<T:AxisInfo> Default for Axis<T> {
+    fn default() -> Self {
+        Self{
+            r#type: T::axis_type(),
+            name: None,
+            data: None,
+            extra: None,
+        }
+    }
+}
+
+
+impl<T:AxisInfo> Axis<T>{
+    pub fn new(name: &str)-> Self{
+        Self{
+            r#type: T::axis_type(),
+            name: Some(name.to_string()),
+            data: None,
+            extra: None,
+        }
+    }
+}
+
 
 /// Available series types in ECharts
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -366,15 +381,101 @@ pub enum SeriesType {
     Unknown,
 }
 
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum DataVariant<X,Y>{
+    /// Single dimension data (string/int/float)
+    Data(Vec<X>),
+
+    /// Two-dimensional data: [x, y]
+    Pair(Vec<(X,Y)>),
+
+    /// Single dimension data as an object with a name field
+    Named(Vec<NamedValue<X>>),
+
+    /// Two-dimensional data with the name: { value: [x, y], name: "str" }
+    NamedPair(Vec<NamedValuePair<X,Y>>),
+}
+
 /// Internal enum to represent the data source for a series
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub enum SeriesDataSource {
-    /// Direct data items
-    Data(Vec<DataItem>),
+pub enum SeriesDataSource<X,Y>{
+    /// Direct data
+    Data(DataVariant<X,Y>),
     /// Reference to a dataset by index
-    DatasetIndex(usize),
+    DatasetIndex(usize)
 }
+
+impl<X,Y> Into<SeriesDataSource<X,Y>> for Vec<(X, Y)>
+{
+    fn into(self) -> SeriesDataSource<X,Y> {
+        SeriesDataSource::from_pairs(self)
+    }
+
+}
+
+impl<X,Y> Into<SeriesDataSource<X,Y>> for Vec<(X, Y, String)>
+{
+    fn into(self) -> SeriesDataSource<X,Y> {
+        SeriesDataSource::from_tuples_with_label(self)
+    }
+}
+
+impl<X,Y> Into<SeriesDataSource<X,Y>> for Vec<X>
+{
+    fn into(self) -> SeriesDataSource<X,Y> {
+        SeriesDataSource::from_values(self)
+    }
+}
+
+impl<X,Y> SeriesDataSource<X,Y> {
+    /// Creates a new SeriesDataSource that references a dataset by index
+    pub fn from_dataset_index(index: usize) -> Self {
+        Self::DatasetIndex(index)
+    }
+
+    /// Creates a SeriesDataSource with a simple array of values
+    pub fn from_values(values: Vec<X>) -> Self {
+        Self::Data(DataVariant::Data(values))
+    }
+
+    /// Creates a SeriesDataSource with an array of [x,y] pairs
+    pub fn from_pairs(pairs: Vec<(X,Y)>) -> Self {
+        Self::Data(DataVariant::Pair(pairs))
+    }
+
+   pub fn from_named_value_pairs(named_pairs: Vec<NamedValuePair<X,Y>>) -> Self{
+       Self::Data(DataVariant::NamedPair(named_pairs))
+   }
+
+
+    /// Creates a SeriesDataSource with named values
+    pub fn with_named_values(named_values: Vec<NamedValue<X>>) -> Self {
+        Self::Data(DataVariant::Named(named_values))
+    }
+
+    pub fn from_labeled_values(values: Vec<(X, String)>) -> Self
+    {
+        let data_named_values = values.into_iter().map(|(x,label)| NamedValue{
+            value: x.into(),
+            name: label
+        }).collect();
+        Self::with_named_values(data_named_values)
+    }
+
+    /// Creates a SeriesDataSource with named pairs
+    pub fn from_tuples_with_label(values: Vec<(X, Y, String)>) -> Self
+    {
+        let data_named_pairs = values.into_iter()
+            .map(|(x, y,label) | NamedValuePair::new(x.into(), y.into(),label))
+            .collect();
+        Self::from_named_value_pairs(data_named_pairs)
+    }
+
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -392,7 +493,7 @@ pub enum DataPointSymbol {
 /// Series definition
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Series {
+pub struct Series<X,Y> {
     /// Chart type
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<SeriesType>,
@@ -409,7 +510,7 @@ pub struct Series {
 
     /// Data array
     #[serde(flatten)]
-    pub data: SeriesDataSource,
+    pub data: SeriesDataSource<X,Y>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub symbol: Option<DataPointSymbol>,
@@ -422,8 +523,8 @@ pub struct Series {
     pub extra: Option<Value>,
 }
 
-impl Series {
-    pub(crate) fn new(name:&str, r#type: SeriesType, data: SeriesDataSource) -> Series {
+impl<X,Y> Series <X,Y>{
+    pub fn new(name:&str, r#type: SeriesType, data: SeriesDataSource<X,Y>) -> Series<X,Y> {
         Self{
             r#type: Some(r#type),
             name: Some(name.to_string()),
@@ -469,8 +570,14 @@ pub struct Transform{
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Source{
-    pub source: Vec<[DataValue; 2]>,
+pub struct Source<X,Y>{
+    pub source: Vec<(X,Y)>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LabelledSource<X,Y>{
+    pub source: Vec<(X,Y,String)>,
 }
 
 
@@ -478,22 +585,52 @@ pub struct Source{
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
-pub enum DatasetComponent {
-    Source(Source),
-    Transform(Transform)
+pub enum DatasetComponent<X,Y> {
+    Source(Source<X,Y>),
+    LabelledSource(LabelledSource<X,Y>),
+    Transform(Vec<Transform>)
 }
 
-impl DatasetComponent {
-    pub fn tr(transform: DatasetTransform,index: usize) -> Self{
+
+impl<X,Y> Into<DatasetComponent<X,Y>> for Vec<(X,Y)>
+{
+    fn into(self) -> DatasetComponent<X,Y> {
+        DatasetComponent::src(self)
+    }
+}
+
+impl<X,Y> Into<DatasetComponent<X,Y>> for Vec<(X,Y,String)>
+{
+    fn into(self) -> DatasetComponent<X,Y> {
+        DatasetComponent::labelled_source(self)
+    }
+}
+
+
+
+impl<X,Y> DatasetComponent<X,Y> {
+    pub fn tr(transform: DatasetTransform, index: usize) -> Self{
+        Self::Transform(vec![Transform {
+            transform,
+            from_dataset_index: Some(index),
+        }])
+    }
+
+    pub fn trs(transform: Vec<DatasetTransform>, index: usize) -> Self{
         Self::Transform(
-            Transform {
-                transform,
-                from_dataset_index: Some(index),
-            }
+            transform
+                .into_iter()
+                .map(|tr|
+                    Transform {
+                        transform:tr,
+                        from_dataset_index: Some(index)
+                    }
+                )
+            .collect()
         )
     }
 
-    pub fn src(source: Vec<[DataValue; 2]>) -> Self {
+    pub fn src(source: Vec<(X,Y)>) -> Self {
         Self::Source(
             Source {
                 source
@@ -501,6 +638,14 @@ impl DatasetComponent {
         )
     }
 
+    /// Constructor for the labeled source. Always put the label last
+    pub fn labelled_source(source: Vec<(X,Y,String)>) -> Self {
+        Self::LabelledSource(
+            LabelledSource{
+                source
+            }
+        )
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -508,8 +653,11 @@ impl DatasetComponent {
 pub enum DatasetTransformType {
     Filter,
     Sort,
+    Boxplot,
     #[serde(rename = "ecStat:regression")]
-    Regression
+    Regression,
+    #[serde(rename = "ecStat:clustering")]
+    Clustering
 }
 
 /// Transform applied to a dataset
@@ -517,18 +665,50 @@ pub enum DatasetTransformType {
 #[serde(rename_all = "camelCase")]
 pub struct DatasetTransform {
     /// Transform type
-    pub r#type: DatasetTransformType,
+    r#type: DatasetTransformType,
 
     /// Transform configuration
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub config: Option<RegressionConfig>,
+    config: DatasetTransformConfig,
 
-    /// Additional raw transform options
-    #[serde(flatten)]
-    pub extra: Option<Value>,
 }
 
-/// Regression methods supported by ecStat
+
+impl DatasetTransform {
+
+    pub fn regression(config: RegressionConfig) -> Self {
+        Self{
+            r#type: DatasetTransformType::Regression,
+            config: DatasetTransformConfig::Regression(config)
+        }
+    }
+
+    pub fn clustering(clustering_config: ClusteringConfig)->Self{
+        Self{
+            r#type: DatasetTransformType::Clustering,
+            config: DatasetTransformConfig::Clustering(clustering_config)
+        }
+    }
+
+    pub fn sort(sort_config: SortConfig) -> Self {
+        Self{
+            r#type: DatasetTransformType::Sort,
+            config: DatasetTransformConfig::Sort(sort_config)
+        }
+    }
+
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+enum DatasetTransformConfig {
+    Regression(RegressionConfig),
+    Clustering(ClusteringConfig),
+    Sort(SortConfig)
+}
+
+
+/// regression methods supported by ecStat
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum RegressionMethod {
@@ -537,6 +717,21 @@ pub enum RegressionMethod {
     Logarithmic,
     Polynomial,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SortConfig {
+    dimension: u8,
+    order : Order
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum Order {
+    Asc,
+    Desc
+}
+
 
 /// Configuration for regression transforms
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -547,9 +742,27 @@ pub struct RegressionConfig {
 
     /// Polynomial order (only used when method is Polynomial)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub order: Option<u32>,
+    pub order: Option<u8>,
 
     /// Additional raw regression config options
     #[serde(flatten)]
     pub extra: Option<Value>,
+}
+
+
+
+/// Configuration for clustering transforms
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ClusteringConfig {
+
+    /// The number of clusters to generate (must be > 1).
+    pub cluster_count: u8,
+
+    ///dimension to which the cluster index will be written
+    pub output_cluster_index_dimension: u8,
+
+    /// dimensions of source data that will be used in calculation of a cluster
+    pub dimensions : Option<Vec<usize>>,
+
 }

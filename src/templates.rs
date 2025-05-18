@@ -1,20 +1,24 @@
 use crate::options::{EChartsOption};
 use sailfish::TemplateSimple;
+use serde::Serialize;
+use crate::builder::AxisInfo;
 use crate::common::Size;
 
 
 
 #[derive(TemplateSimple)]
 #[template(path = "chart.stpl")]
-pub struct ScriptTemplate{
+pub struct ScriptTemplate<X:Serialize + AxisInfo,Y:Serialize + AxisInfo>{
     chart_target_id: String,
     width: Size,
     height: Size,
-    options: EChartsOption
+    options: EChartsOption<X,Y>
 }
 
-impl ScriptTemplate{
-    pub fn new(chart_target_id: String, width: Size, height: Size, options: EChartsOption) -> Self {
+impl<X,Y> ScriptTemplate<X,Y>
+where X: Serialize + AxisInfo, Y: Serialize + AxisInfo{
+
+    pub fn new(chart_target_id: String, width: Size, height: Size, options: EChartsOption<X,Y>) -> Self {
         Self {
             chart_target_id,
             width,

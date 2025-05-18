@@ -5,14 +5,13 @@ pub mod common;
 
 pub use builder::{
     ChartBuilder,
-    ChartBuilderExt,
-    RegressionChartBuilderExt,
+    RegressionChartBuilder,
 };
 
 #[cfg(test)]
 mod tests {
-    use crate::builder::{ChartBuilder, ChartBuilderExt, RegressionChartBuilderExt};
-    use crate::options::SeriesType;
+    use crate::builder::{ChartBuilder, RegressionChartBuilder};
+    use crate::options::{EChartsOption, SeriesType};
     use crate::templates::OnePage;
     use sailfish::TemplateSimple;
     use std::net::TcpListener;
@@ -23,21 +22,37 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let chart = ChartBuilder::<f64, &str>::new()
+        let chart = EChartsOption::<f64, &str>::new()
             .title_str("Something interesting")
             .add_series(
+                SeriesType::Line,
                 "fist_set",
                 vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
-                ,SeriesType::Line)
+            )
             .add_series(
+                SeriesType::Line,
                 "second_set",
                 vec![(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
-                ,SeriesType::Line
             )
             .build(Size::pixels(600),Size::pixels(400));
 
-        let numeric_chart = ChartBuilder::<f64, f64>::new()
+        let numeric_chart = EChartsOption::<f64, f64>::new()
             .title_str("Something completely different")
+            .add_linear_regression_series(
+                "regression set2",
+                vec![
+                    (1.0,1.0),
+                    (1.0,2.0),
+                    (3.5,3.0),
+                    (4.0,4.0),
+                    (4.1,1.0),
+                    (4.1,3.0),
+                    (5.0,4.0),
+                    (14.0,3.0),
+                    (15.0,1.0),
+                    (20.0,1.0)
+                ]
+            )
             .add_linear_regression_series(
                 "regression set",
                 vec![
