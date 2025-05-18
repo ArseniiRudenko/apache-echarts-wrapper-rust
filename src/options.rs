@@ -713,7 +713,7 @@ pub enum Order {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RegressionConfig {
-    /// regression method
+    /// Regression method
     pub method: RegressionMethod,
 
     /// Polynomial order (only used when method is Polynomial)
