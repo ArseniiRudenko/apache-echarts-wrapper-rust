@@ -5,116 +5,87 @@ use serde::Serialize;
 use serde_json::json;
 use uuid::Uuid;
 
+pub trait AxisInfo{
+    const AXIS_TYPE: AxisType;
+}
+pub struct ValueAxis;
+pub struct CategoryAxis;
 
-pub trait AxisInfo {
-    fn axis_type() -> AxisType;
-    
+impl AxisInfo for ValueAxis {
+    const AXIS_TYPE: AxisType = AxisType::Value;
 }
 
-///Trait that captures that rust type is of Value AxisType on the type level.
-///That will catch and prevent user from trying to create regression charts on category data
-///(which is not supported but will not cause an error, instead the chart just won't render)
-pub trait ValueAxis : AxisInfo {}
-
-impl AxisInfo for u128 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisInfo for CategoryAxis {
+    const AXIS_TYPE: AxisType = AxisType::Category;
 }
 
-impl ValueAxis for u128 {}
-
-impl AxisInfo for i128 {
-
-    fn axis_type() -> AxisType { AxisType::Value }
+pub trait AxisKindMarker {
+    type AxisType : AxisInfo;
 }
 
-impl ValueAxis for i128 {}
-
-
-impl AxisInfo for i32 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for u128 {
+    type AxisType = ValueAxis;
+}
+impl AxisKindMarker for i32 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for i32 {}
-
-impl AxisInfo for u32 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for u32 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for u32 {}
-
-impl AxisInfo for i64 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for i64 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for i64 {}
-
-impl AxisInfo for u64 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for u64 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for u64 {}
-
-impl AxisInfo for i16 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for i16{
+    type AxisType = ValueAxis;
+}
+impl AxisKindMarker for u16 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for i16 {}
-
-impl AxisInfo for u16 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for i8 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for u16 {}
-
-impl AxisInfo for i8 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for u8 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for i8 {}
-
-impl AxisInfo for u8 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for f32 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for u8 {}
-
-impl AxisInfo for f32 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for f64 {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for f32 {}
-
-impl AxisInfo for f64 {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for usize{
+    type AxisType = ValueAxis;
+}
+impl AxisKindMarker for isize {
+    type AxisType = ValueAxis;
 }
 
-impl ValueAxis for f64 {}
-
-impl AxisInfo for usize {
-    fn axis_type() -> AxisType { AxisType::Value }
+impl AxisKindMarker for String {
+    type AxisType = CategoryAxis;
 }
 
-impl ValueAxis for usize {}
-
-impl AxisInfo for isize {
-    fn axis_type() -> AxisType { AxisType::Value }
-}
-
-impl ValueAxis for isize {}
-
-impl AxisInfo for String {
-    fn axis_type() -> AxisType { AxisType::Category }
-}
-
-impl<'a> AxisInfo for &'a str {
-    fn axis_type() -> AxisType { AxisType::Category }
+impl<'a> AxisKindMarker for &'a str {
+    type AxisType = CategoryAxis;
 }
 
 
 ///trait that provides regression methods that are only supported when both x and y are numeric
 pub trait RegressionChartBuilder<X, Y>: ChartBuilder<X, Y>
-where X: AxisInfo + ValueAxis + Serialize,
-      Y: AxisInfo + ValueAxis + Serialize
+where X: AxisKindMarker<AxisType=ValueAxis> + Serialize,
+      Y: AxisKindMarker<AxisType=ValueAxis> + Serialize,
+
 {
     
     fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
@@ -227,7 +198,7 @@ where X: AxisInfo + ValueAxis + Serialize,
 
 
 pub trait ChartBuilder<X, Y>: Sized
-where X: AxisInfo+Serialize, Y: AxisInfo+Serialize
+where X: AxisKindMarker+Serialize, Y: AxisKindMarker+Serialize
 {
 
     fn options(&mut self) -> &mut EChartsOption<X,Y>;
@@ -324,7 +295,7 @@ where X: AxisInfo+Serialize, Y: AxisInfo+Serialize
 
 
 impl<X, Y>  EChartsOption<X,Y>
-where X: AxisInfo, Y: AxisInfo {
+where X: AxisKindMarker, Y: AxisKindMarker {
 
     pub fn new() -> Self {
         Self {
@@ -352,7 +323,7 @@ where X: AxisInfo, Y: AxisInfo {
 
 
 impl<X, Y> ChartBuilder<X, Y> for  EChartsOption<X, Y>
-where X: AxisInfo+Serialize , Y: AxisInfo+Serialize {
+where X: AxisKindMarker+Serialize , Y: AxisKindMarker+Serialize {
     fn options(&mut self) -> &mut EChartsOption<X,Y> {
         self
     }
@@ -364,4 +335,5 @@ where X: AxisInfo+Serialize , Y: AxisInfo+Serialize {
 
 
 impl <X, Y> RegressionChartBuilder<X, Y> for EChartsOption<X, Y>
-where X: ValueAxis + AxisInfo+Serialize, Y: ValueAxis + AxisInfo+Serialize{}
+where X: AxisKindMarker<AxisType = ValueAxis> + Serialize, 
+      Y: AxisKindMarker<AxisType = ValueAxis> + Serialize{}

@@ -1,13 +1,14 @@
 use std::fmt::Debug;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::builder::AxisKindMarker;
 use crate::builder::AxisInfo;
 use crate::common::Percent;
 
 /// Root object for ECharts configuration
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct EChartsOption<X: AxisInfo,Y: AxisInfo> {
+pub struct EChartsOption<X:AxisKindMarker,Y:AxisKindMarker> {
     /// Chart title options
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<Title>,
@@ -309,7 +310,7 @@ pub struct  NamedValue<X>{
 /// Axis (cartesian)
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Axis<T:AxisInfo> {
+pub struct Axis<T:AxisKindMarker> {
     /// Axis type: value, category, time, log
     pub r#type: AxisType,
 
@@ -326,10 +327,10 @@ pub struct Axis<T:AxisInfo> {
     pub extra: Option<Value>,
 }
 
-impl<T:AxisInfo> Default for Axis<T> {
+impl<T:AxisKindMarker> Default for Axis<T> {
     fn default() -> Self {
         Self{
-            r#type: T::axis_type(),
+            r#type: T::AxisType::AXIS_TYPE,
             name: None,
             data: None,
             extra: None,
@@ -338,10 +339,10 @@ impl<T:AxisInfo> Default for Axis<T> {
 }
 
 
-impl<T:AxisInfo> Axis<T>{
+impl<T:AxisKindMarker> Axis<T>{
     pub fn new(name: &str)-> Self{
         Self{
-            r#type: T::axis_type(),
+            r#type: T::AxisType::AXIS_TYPE,
             name: Some(name.to_string()),
             data: None,
             extra: None,
