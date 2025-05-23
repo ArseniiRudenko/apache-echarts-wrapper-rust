@@ -42,7 +42,7 @@ impl AxisKindMarker for u64 {
     type AxisType = ValueAxis;
 }
 
-impl AxisKindMarker for i16{
+impl AxisKindMarker for i16 {
     type AxisType = ValueAxis;
 }
 impl AxisKindMarker for u16 {
