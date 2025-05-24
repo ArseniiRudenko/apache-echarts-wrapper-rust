@@ -9,7 +9,11 @@ pub trait AxisInfo{
     const AXIS_TYPE: AxisType;
 }
 pub struct ValueAxis;
+
 pub struct CategoryAxis;
+
+pub struct TimeAxis;
+
 
 impl AxisInfo for ValueAxis {
     const AXIS_TYPE: AxisType = AxisType::Value;
@@ -18,6 +22,11 @@ impl AxisInfo for ValueAxis {
 impl AxisInfo for CategoryAxis {
     const AXIS_TYPE: AxisType = AxisType::Category;
 }
+
+impl AxisInfo for TimeAxis {
+    const AXIS_TYPE: AxisType = AxisType::Time;
+}
+
 
 pub trait AxisKindMarker {
     type AxisType : AxisInfo;

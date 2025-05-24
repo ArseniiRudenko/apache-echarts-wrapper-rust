@@ -267,20 +267,14 @@ pub struct Legend {
 }
 
 /// Axis types supported by ECharts
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum AxisType {
     Value,
     Category,
     Time,
-    Log,
-    /// For any unrecognized axis type
-    #[serde(other)]
-    Unknown,
+    Log
 }
-
-
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -313,6 +307,8 @@ pub struct  NamedValue<X>{
 pub struct Axis<T:AxisKindMarker> {
     /// Axis type: value, category, time, log
     pub r#type: AxisType,
+    
+    pub inverse: Option<bool>,
 
     /// Axis name
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -331,6 +327,7 @@ impl<T:AxisKindMarker> Default for Axis<T> {
     fn default() -> Self {
         Self{
             r#type: T::AxisType::AXIS_TYPE,
+            inverse: None,
             name: None,
             data: None,
             extra: None,
@@ -340,12 +337,23 @@ impl<T:AxisKindMarker> Default for Axis<T> {
 
 
 impl<T:AxisKindMarker> Axis<T>{
-    pub fn new(name: &str)-> Self{
-        Self{
-            r#type: T::AxisType::AXIS_TYPE,
-            name: Some(name.to_string()),
-            data: None,
-            extra: None,
+    pub fn new(name: &str, is_log:bool)-> Self{
+        if T::AxisType::AXIS_TYPE == AxisType::Value && is_log {
+            Self{
+                r#type:  AxisType::Log,
+                name: Some(name.to_string()),
+                inverse: None,
+                data: None,
+                extra: None,
+            }
+        }else {
+            Self{
+                r#type:  T::AxisType::AXIS_TYPE,
+                name: Some(name.to_string()),
+                inverse: None,
+                data: None,
+                extra: None,
+            }
         }
     }
 }
