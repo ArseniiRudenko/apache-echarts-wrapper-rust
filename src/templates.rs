@@ -1,6 +1,6 @@
 use crate::options::{EChartsOption};
 use sailfish::TemplateSimple;
-use serde::{Serialize, Serializer};
+use serde::{Serialize};
 use crate::axis_typing::AxisKindMarker;
 use crate::common::Size;
 
