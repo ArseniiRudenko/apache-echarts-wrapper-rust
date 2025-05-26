@@ -3,6 +3,13 @@ mod builder;
 pub mod templates;
 pub mod common;
 
+#[cfg(feature = "time_axis")]
+pub mod time_axis;
+mod axis_typing;
+
+#[cfg(feature = "chrono_axis")]
+mod chrono_axis;
+
 pub use builder::{
     ChartBuilder,
     RegressionChartBuilder,
@@ -17,10 +24,13 @@ mod tests {
     use std::net::TcpListener;
     use std::thread;
     use std::time::Duration;
+    use time::Weekday;
+    use time::Weekday::{Friday, Monday, Thursday, Tuesday};
     use tiny_http::{Header, Server};
     use crate::common::Size;
 
     #[test]
+    #[cfg(feature = "time_axis")]
     fn it_works() {
         let chart = EChartsOption::<f64, &str>::new()
             .title_str("Something interesting")
@@ -69,8 +79,24 @@ mod tests {
                 ]
             ) .build(Size::pixels(600),Size::pixels(400));
 
+        let chart_week = EChartsOption::<f64, Weekday>::new()
+            .title_str("Something Dated")
+            .add_series(
+                SeriesType::Line,
+                "fist_set",
+                vec![(12.5,Monday),(14.0,Tuesday),(15.0,Thursday),(10.0,Friday)]
+            )
+            .add_series(
+                SeriesType::Line,
+                "second_set",
+                vec![(2.0,Monday),(14.0,Thursday),(15.0,Thursday),(20.0,Monday)]
+            )
+            .build(Size::pixels(600),Size::pixels(400));
+
+
         let mut body = chart.render_once().unwrap();
         body.push_str(numeric_chart.render_once().unwrap().as_str());
+        body.push_str(chart_week.render_once().unwrap().as_str());
         // Generate your HTML string here
         let html = OnePage::new("Test",body.as_str()).render_once().unwrap();
 

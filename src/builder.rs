@@ -1,3 +1,4 @@
+use crate::axis_typing::{AxisKindMarker, ValueAxis};
 use crate::common::Size;
 use crate::options::*;
 use crate::templates::ScriptTemplate;
@@ -5,95 +6,11 @@ use serde::Serialize;
 use serde_json::json;
 use uuid::Uuid;
 
-pub trait AxisInfo{
-    const AXIS_TYPE: AxisType;
-}
-pub struct ValueAxis;
-
-pub struct CategoryAxis;
-
-pub struct TimeAxis;
-
-
-impl AxisInfo for ValueAxis {
-    const AXIS_TYPE: AxisType = AxisType::Value;
-}
-
-impl AxisInfo for CategoryAxis {
-    const AXIS_TYPE: AxisType = AxisType::Category;
-}
-
-impl AxisInfo for TimeAxis {
-    const AXIS_TYPE: AxisType = AxisType::Time;
-}
-
-
-pub trait AxisKindMarker {
-    type AxisType : AxisInfo;
-}
-
-impl AxisKindMarker for u128 {
-    type AxisType = ValueAxis;
-}
-impl AxisKindMarker for i32 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for u32 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for i64 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for u64 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for i16 {
-    type AxisType = ValueAxis;
-}
-impl AxisKindMarker for u16 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for i8 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for u8 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for f32 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for f64 {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for usize{
-    type AxisType = ValueAxis;
-}
-impl AxisKindMarker for isize {
-    type AxisType = ValueAxis;
-}
-
-impl AxisKindMarker for String {
-    type AxisType = CategoryAxis;
-}
-
-impl<'a> AxisKindMarker for &'a str {
-    type AxisType = CategoryAxis;
-}
-
-
 ///trait that provides regression methods that are only supported when both x and y are numeric
 pub trait RegressionChartBuilder<X, Y>: ChartBuilder<X, Y>
-where X: AxisKindMarker<AxisType=ValueAxis> + Serialize,
-      Y: AxisKindMarker<AxisType=ValueAxis> + Serialize,
+where X: AxisKindMarker<AxisType=ValueAxis>,
+      Y: AxisKindMarker<AxisType=ValueAxis>,
+      EChartsOption<X,Y>:Serialize
 
 {
     
@@ -207,7 +124,8 @@ where X: AxisKindMarker<AxisType=ValueAxis> + Serialize,
 
 
 pub trait ChartBuilder<X, Y>: Sized
-where X: AxisKindMarker+Serialize, Y: AxisKindMarker+Serialize
+where X: AxisKindMarker, Y: AxisKindMarker,
+EChartsOption<X,Y>:Serialize
 {
 
     fn options(&mut self) -> &mut EChartsOption<X,Y>;
