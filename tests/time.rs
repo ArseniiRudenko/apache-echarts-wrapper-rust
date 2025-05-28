@@ -4,23 +4,23 @@ use apache_echarts_wrapper::ChartBuilder;
 use sailfish::TemplateSimple;
 use time::macros::{datetime, time};
 use time::Weekday::{Friday, Monday, Thursday, Tuesday};
-use time::{Time, UtcDateTime, Weekday};
+use time::UtcDateTime;
 
 mod common;
 use crate::common::show_page;
 #[cfg(feature = "time_axis")]
 #[test]
 fn time_test() {
-    let chart_week = EChartsOption::<f64, Weekday>::new()
+    let chart_week = EChartsOption::<f64, time::Weekday>::new()
         .title_str("Week test")
         .add_series(
             SeriesType::Line,
-            "fist_set",
+            "fist_set".to_string(),
             vec![(12.5,Monday),(14.0,Tuesday),(15.0,Thursday),(10.0,Friday)]
         )
         .add_series(
             SeriesType::Line,
-            "second_set",
+            "second_set".to_string(),
             vec![(2.0,Monday),(14.0,Thursday),(15.0,Thursday),(20.0,Monday)]
         )
         .build(Size::pixels(600),Size::pixels(400));
@@ -28,7 +28,7 @@ fn time_test() {
         .title_str("utc date time test")
         .add_series(
             SeriesType::Line,
-            "fist_set",
+            "fist_set".to_string(),
             vec![
                 (12.5,UtcDateTime::now()),
                 (14.0,datetime!(2025-01-01 12:00 UTC).into()),
@@ -38,7 +38,7 @@ fn time_test() {
         )
         .add_series(
             SeriesType::Line,
-            "second_set",
+            "second_set".to_string(),
             vec![
                 (2.0,datetime!(2025-01-01 12:00 UTC).into()),
                 (14.0,datetime!(2024-01-01 12:00 UTC).into()),
@@ -49,11 +49,11 @@ fn time_test() {
         .build(Size::pixels(600),Size::pixels(400));
 
     
-    let chart_time_conf = EChartsOption::<f64, Time>::new()
-        .title_str("Something Dated")
+    let chart_time_conf = EChartsOption::<f64, time::Time>::new()
+        .title_str("Time test")
         .add_series(
             SeriesType::Line,
-            "fist_set",
+            "fist_set".to_string(),
             vec![
                 (12.5,time!(12:00)),
                 (14.0,time!(12:30)),
@@ -63,7 +63,7 @@ fn time_test() {
         )
         .add_series(
             SeriesType::Line,
-            "second_set",
+            "second_set".to_string(),
             vec![
                 (2.0,time!(12:00)),
                 (14.0,time!(10:00)),

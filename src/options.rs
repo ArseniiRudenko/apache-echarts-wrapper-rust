@@ -10,7 +10,7 @@ use crate::common::Percent;
 pub struct EChartsOption<X:AxisKindMarker,Y:AxisKindMarker> {
     /// Chart title options
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub title: Option<Title>,
+    pub(crate) title: Option<Title>,
 
     /// Grid positioning and style options
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -26,7 +26,7 @@ pub struct EChartsOption<X:AxisKindMarker,Y:AxisKindMarker> {
 
     /// Dataset component for providing data
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dataset: Option<Vec<DatasetComponent<X,Y>>>,
+    pub(crate) dataset: Option<Vec<DatasetComponent<X,Y>>>,
 
     /// X-axis options (Cartesian charts)
     pub x_axis: Axis<X>,
@@ -36,7 +36,7 @@ pub struct EChartsOption<X:AxisKindMarker,Y:AxisKindMarker> {
 
     /// Series data
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub series: Option<Vec<Series<X,Y>>>,
+    pub(crate) series: Option<Vec<Series<X,Y>>>,
 
     /// Additional raw options not covered by this binding
     #[serde(flatten)]
@@ -417,25 +417,31 @@ pub enum SeriesDataSource<X:AxisKindMarker,Y:AxisKindMarker>{
     DatasetIndex(usize)
 }
 
-impl<X:AxisKindMarker,Y:AxisKindMarker> Into<SeriesDataSource<X,Y>> for Vec<(X, Y)>
+impl<X:AxisKindMarker,Y:AxisKindMarker> From<Vec<(X, Y)>> for SeriesDataSource<X,Y>
 {
-    fn into(self) -> SeriesDataSource<X,Y> {
-        SeriesDataSource::from_pairs(self)
-    }
-
-}
-
-impl<X:AxisKindMarker,Y:AxisKindMarker> Into<SeriesDataSource<X,Y>> for Vec<(X, Y, String)>
-{
-    fn into(self) -> SeriesDataSource<X,Y> {
-        SeriesDataSource::from_tuples_with_label(self)
+    fn from(value: Vec<(X, Y)>) -> Self {
+        SeriesDataSource::from_pairs(value)
     }
 }
 
-impl<X:AxisKindMarker,Y:AxisKindMarker> Into<SeriesDataSource<X,Y>> for Vec<X>
+impl<const N: usize,X:AxisKindMarker,Y:AxisKindMarker> From<[(X, Y); N]> for SeriesDataSource<X,Y>
 {
-    fn into(self) -> SeriesDataSource<X,Y> {
-        SeriesDataSource::from_values(self)
+    fn from(value: [(X, Y); N]) -> Self {
+        Self::Data(DataVariant::Pair(value.into_iter().map(|(x, y)| (x.into(), y.into())).collect()))
+    }
+}
+
+impl<X:AxisKindMarker,Y:AxisKindMarker> From<Vec<(X, Y, String)>> for SeriesDataSource<X,Y>
+{
+    fn from(value: Vec<(X, Y, String)>) -> Self {
+        SeriesDataSource::from_tuples_with_label(value)
+    }
+}
+
+impl<X:AxisKindMarker,Y:AxisKindMarker> From<Vec<X>> for SeriesDataSource<X,Y>
+{
+    fn from(value: Vec<X>) -> Self {
+        SeriesDataSource::from_values(value)
     }
 }
 
@@ -533,10 +539,10 @@ pub struct Series<X:AxisKindMarker,Y:AxisKindMarker> {
 }
 
 impl<X:AxisKindMarker,Y:AxisKindMarker> Series <X,Y>{
-    pub fn new(name:&str, r#type: SeriesType, data: SeriesDataSource<X,Y>) -> Series<X,Y> {
+    pub fn new(name:String, r#type: SeriesType, data: SeriesDataSource<X,Y>) -> Series<X,Y> {
         Self{
             r#type: Some(r#type),
-            name: Some(name.to_string()),
+            name: Some(name),
             smooth: None,
             area_style: None,
             data,
@@ -581,11 +587,32 @@ pub struct Source<X:AxisKindMarker,Y:AxisKindMarker>{
     pub source: Vec<(ValueSerializeWrapper<X>,ValueSerializeWrapper<Y>)>,
 }
 
+impl<X:AxisKindMarker,Y:AxisKindMarker> From<Vec<(X,Y)>> for Source<X,Y>{
+    fn from(value: Vec<(X,Y)>) -> Self {
+        Self{
+            source: value.into_iter().map(|(x,y)| (x.into(),y.into())).collect()
+        }
+    }
+}
+
+impl<const N:usize,X:AxisKindMarker,Y:AxisKindMarker> From<[(X,Y);N]> for Source<X,Y>
+{
+    fn from(value: [(X,Y);N]) -> Self {
+        Self{
+            source: value.into_iter().map(|(x,y)| (x.into(),y.into())).collect()
+        }
+    }
+}
+
+
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LabelledSource<X:AxisKindMarker,Y:AxisKindMarker>{
     pub source: Vec<(ValueSerializeWrapper<X>,ValueSerializeWrapper<Y>,String)>,
 }
+
+
+
 
 
 /// Dataset component for providing and transforming data
@@ -599,17 +626,24 @@ pub enum DatasetComponent<X:AxisKindMarker,Y:AxisKindMarker> {
 }
 
 
-impl<X:AxisKindMarker,Y:AxisKindMarker> Into<DatasetComponent<X,Y>> for Vec<(X,Y)>
+impl<const N:usize,X:AxisKindMarker,Y:AxisKindMarker> From<[(X,Y);N]> for DatasetComponent<X,Y>
 {
-    fn into(self) -> DatasetComponent<X,Y> {
-        DatasetComponent::src(self)
+    fn from(value: [(X,Y);N]) -> Self {
+        DatasetComponent::Source(value.into())
     }
 }
 
-impl<X:AxisKindMarker,Y:AxisKindMarker> Into<DatasetComponent<X,Y>> for Vec<(X,Y,String)>
+impl<X:AxisKindMarker,Y:AxisKindMarker> From<Vec<(X,Y)>> for DatasetComponent<X,Y>
 {
-    fn into(self) -> DatasetComponent<X,Y> {
-        DatasetComponent::labelled_source(self)
+    fn from(value: Vec<(X, Y)>) -> Self {
+        DatasetComponent::src(value)
+    }
+}
+
+impl<X:AxisKindMarker,Y:AxisKindMarker> From<Vec<(X,Y,String)>> for DatasetComponent<X,Y>
+{
+    fn from(value: Vec<(X, Y, String)>) -> Self {
+        DatasetComponent::labelled_source(value)
     }
 }
 
@@ -632,11 +666,7 @@ impl<X:AxisKindMarker,Y:AxisKindMarker> DatasetComponent<X,Y> {
     }
 
     pub fn src(source: Vec<(X,Y)>) -> Self {
-        Self::Source(
-            Source {
-                source: source.into_iter().map(|(x,y)| (x.into(),y.into())).collect()
-            }
-        )
+        Self::Source(source.into())
     }
 
     /// Constructor for the labeled source. Always put the label last

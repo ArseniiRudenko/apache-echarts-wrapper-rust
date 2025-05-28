@@ -207,19 +207,15 @@ EChartsOption<X,Y>:Serialize
     }
 
 
-    fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self,series_type: SeriesType, series_label:&str, data: TData) -> Self {
+    fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self,series_type: SeriesType, series_label:String, data: TData) -> Self {
         self.options().series.as_mut().unwrap().push(
             Series::new(series_label,series_type,data.into())
         );
         self
     }
 
-
-
     fn build(self, width: Size, height: Size) -> ScriptTemplate<X,Y>;
 }
-
-
 
 impl<X, Y>  EChartsOption<X,Y>
 where X: AxisKindMarker, Y: AxisKindMarker {

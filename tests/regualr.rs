@@ -13,12 +13,12 @@ fn it_works() {
         .title_str("Something interesting")
         .add_series(
             SeriesType::Line,
-            "fist_set",
+            "fist_set".to_string(),
             vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
         )
         .add_series(
             SeriesType::Bar,
-            "second_set",
+            "second_set".to_string(),
             vec![(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
         )
         .build(Size::pixels(600),Size::pixels(400));
