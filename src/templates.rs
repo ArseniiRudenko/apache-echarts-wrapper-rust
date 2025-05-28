@@ -4,8 +4,6 @@ use serde::{Serialize};
 use crate::axis_typing::AxisKindMarker;
 use crate::common::Size;
 
-
-
 #[derive(TemplateSimple)]
 #[template(path = "chart.stpl")]
 pub struct ScriptTemplate<X:AxisKindMarker,Y:AxisKindMarker>

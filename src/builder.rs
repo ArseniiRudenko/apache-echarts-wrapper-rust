@@ -125,32 +125,9 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
 }
 
 
-impl<X, Y>  EChartOptions<X,Y>
-where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
-    pub fn new_with_axis(x_axis:Axis<X>,y_axis: Axis<Y>) -> Self {
-        Self {
-            title: None,
-            tooltip: Some(Tooltip {
-                show: true,
-                show_delay: None,
-                hide_delay: None,
-                trigger: Some(TooltipTrigger::Item),
-                formatter: None,
-                axis_pointer: Some(AxisPointer {
-                    r#type: Some(AxisPointerType::Cross),
-                    snap: Some(false),
-                    animation: None,
-                    axis: None,
-                })
-            }),
-            legend: None, grid: None, extra: None, dataset: None,
-            x_axis,
-            y_axis,
-            series: Some(Vec::new()),
-        }
-    }
-    
-    pub fn new() -> Self {
+impl<X, Y> Default for EChartOptions<X,Y>
+where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize{
+    fn default() -> Self {
         Self {
             title: None,
             tooltip: Some(Tooltip {
@@ -169,6 +146,32 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
             legend: None, grid: None, extra: None, dataset: None,
             x_axis: Axis::default(),
             y_axis: Axis::default(),
+            series: Some(Vec::new()),
+        }
+    }
+}
+
+impl<X, Y>  EChartOptions<X,Y>
+where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
+    pub fn new(x_axis:Axis<X>,y_axis: Axis<Y>) -> Self {
+        Self {
+            title: None,
+            tooltip: Some(Tooltip {
+                show: true,
+                show_delay: None,
+                hide_delay: None,
+                trigger: Some(TooltipTrigger::Item),
+                formatter: None,
+                axis_pointer: Some(AxisPointer {
+                    r#type: Some(AxisPointerType::Cross),
+                    snap: Some(false),
+                    animation: None,
+                    axis: None,
+                })
+            }),
+            legend: None, grid: None, extra: None, dataset: None,
+            x_axis,
+            y_axis,
             series: Some(Vec::new()),
         }
     }

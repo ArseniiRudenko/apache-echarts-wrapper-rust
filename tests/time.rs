@@ -10,7 +10,7 @@ use crate::common::show_page;
 #[cfg(feature = "time_axis")]
 #[test]
 fn time_test() {
-    let chart_week = EChartOptions::<f64, time::Weekday>::new()
+    let chart_week = EChartOptions::<f64, time::Weekday>::default()
         .title_str("Week test")
         .add_series(
             SeriesType::Line,
@@ -23,7 +23,7 @@ fn time_test() {
             vec![(2.0,Monday),(14.0,Thursday),(15.0,Thursday),(20.0,Monday)]
         )
         .build(Size::pixels(600),Size::pixels(400));
-    let chart_date_time = EChartOptions::<f64, time::UtcDateTime>::new()
+    let chart_date_time = EChartOptions::<f64, time::UtcDateTime>::default()
         .title_str("utc date time test")
         .add_series(
             SeriesType::Line,
@@ -47,8 +47,8 @@ fn time_test() {
         )
         .build(Size::pixels(600),Size::pixels(400));
 
-    
-    let chart_time_conf = EChartOptions::<f64, time::Time>::new()
+
+    let chart_time_conf = EChartOptions::<f64, time::Time>::default()
         .title_str("Time test")
         .add_series(
             SeriesType::Line,

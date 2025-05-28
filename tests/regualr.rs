@@ -9,7 +9,7 @@ use crate::common::show_page;
 
 #[test]
 fn it_works() {
-    let chart = EChartOptions::<f64, &str>::new()
+    let chart = EChartOptions::<f64, &str>::default()
         .title_str("Something interesting")
         .add_series(
             SeriesType::Line,
@@ -23,7 +23,7 @@ fn it_works() {
         )
         .build(Size::pixels(600),Size::pixels(400));
 
-    let numeric_chart = EChartOptions::<f64, f64>::new()
+    let numeric_chart = EChartOptions::<f64, f64>::default()
         .title_str("Something completely different")
         .add_linear_regression_series(
             "regression set2",

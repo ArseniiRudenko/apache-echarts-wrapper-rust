@@ -9,7 +9,7 @@ use crate::common::show_page;
 #[cfg(feature = "chrono_axis")]
 #[test]
 fn test_chrono() {
-    let chart_month = EChartOptions::<chrono::Month,f64>::new()
+    let chart_month = EChartOptions::<chrono::Month,f64>::default()
         .title_str("Week test")
         .add_series(
             SeriesType::Bar,
