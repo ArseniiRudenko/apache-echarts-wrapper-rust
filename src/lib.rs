@@ -10,7 +10,5 @@ mod axis_typing;
 #[cfg(feature = "chrono_axis")]
 mod chrono_axis;
 
-pub use builder::{
-    ChartBuilder,
-    RegressionChartBuilder,
-};
+pub use builder::RegressionChartBuilder;
+pub use options::EChartOptions;

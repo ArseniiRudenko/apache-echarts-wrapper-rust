@@ -1,4 +1,4 @@
-use crate::options::{EChartsOption};
+use crate::options::{EChartOptions};
 use sailfish::TemplateSimple;
 use serde::{Serialize};
 use crate::axis_typing::AxisKindMarker;
@@ -9,17 +9,17 @@ use crate::common::Size;
 #[derive(TemplateSimple)]
 #[template(path = "chart.stpl")]
 pub struct ScriptTemplate<X:AxisKindMarker,Y:AxisKindMarker>
-where EChartsOption<X,Y>: Serialize{
+where EChartOptions<X,Y>: Serialize{
     chart_target_id: String,
     width: Size,
     height: Size,
-    options: EChartsOption<X,Y>
+    options: EChartOptions<X,Y>
 }
 
 impl<X,Y> ScriptTemplate<X,Y>
-where X: AxisKindMarker, Y: AxisKindMarker, EChartsOption<X,Y>: Serialize{
+where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>: Serialize{
 
-    pub fn new(chart_target_id: String, width: Size, height: Size, options: EChartsOption<X,Y>) -> Self {
+    pub fn new(chart_target_id: String, width: Size, height: Size, options: EChartOptions<X,Y>) -> Self {
         Self {
             chart_target_id,
             width,

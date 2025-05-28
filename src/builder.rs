@@ -7,12 +7,14 @@ use serde_json::json;
 use uuid::Uuid;
 
 ///trait that provides regression methods that are only supported when both x and y are numeric
-pub trait RegressionChartBuilder<X, Y>: ChartBuilder<X, Y>
+pub trait RegressionChartBuilder<X, Y>: Sized
 where X: AxisKindMarker<AxisType=ValueAxis>,
       Y: AxisKindMarker<AxisType=ValueAxis>,
-      EChartsOption<X,Y>:Serialize
+      EChartOptions<X,Y>:Serialize
 
 {
+    fn options(&mut self) -> &mut EChartOptions<X,Y>;
+    
     
     fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
         self.add_regression_dataset(data_source_index, RegressionMethod::Linear, None)
@@ -123,103 +125,31 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
 }
 
 
-pub trait ChartBuilder<X, Y>: Sized
-where X: AxisKindMarker, Y: AxisKindMarker,
-EChartsOption<X,Y>:Serialize
-{
-
-    fn options(&mut self) -> &mut EChartsOption<X,Y>;
-    
-    /// Set chart title
-    fn title_str(mut self, title: &str) -> Self {
-        let t =  self.options().title.get_or_insert_default();
-        t.left = Some(Position::Keyword(PositionKeyword::Center));
-        t.text = Some(title.to_string());
-        self
-    }
-
-    fn subtitle_str(mut self, subtitle: &str) -> Self {
-        self.options().title.get_or_insert_default().sub_text = Some(subtitle.to_string());
-        self
-    }
-
-    fn title(mut self, title: Title) -> Self {
-        self.options().title = Some(title);
-        self
-    }
-
-
-    fn x_axis_label(mut self, x: &str) -> Self {
-        self.options().x_axis.name = Some(x.to_string());
-        self
-    }
-
-    fn y_axis_label(mut self, y: &str) -> Self {
-        self.options().y_axis.name = Some(y.to_string());
-        self
-    }
-
-    //add a dataset and get an index
-    fn add_dataset<TData:Into<DatasetComponent<X,Y>>>(mut self, data: TData) -> usize {
-        let index = self.options().dataset.as_mut().unwrap().len();
-        self.options().dataset.as_mut().unwrap().push(data.into());
-        index
-    }
-
-    /// Add visualization for a dataset.
-    /// If no datasets exist, or dataset_index is out of range, no datasets will be added
-    fn add_dataset_visualisation(mut self, series_label:&str, series_type: SeriesType, dataset_index: usize) -> Self {
-        let datasets = &self.options().dataset;
-         if let Some(datasets) = datasets {
-           if let Some(dataset) =  datasets.get(dataset_index){
-               match dataset {
-                   DatasetComponent::Source(_) | DatasetComponent::Transform(_) => {
-                       self.options().series.as_mut().unwrap().push(Series {
-                           r#type: Some(series_type),
-                           name: Some(format!("{}", series_label)),
-                           smooth: Some(true),
-                           area_style: None,
-                           symbol: None,
-                           symbol_size: None,
-                           data: SeriesDataSource::DatasetIndex(dataset_index),
-                           extra: None
-                       });
-                   }
-                   DatasetComponent::LabelledSource(_) => {
-                       self.options().series.as_mut().unwrap().push(Series {
-                           r#type: Some(series_type),
-                           name: Some(format!("{}", series_label)),
-                           smooth: Some(true),
-                           area_style: None,
-                           symbol: None,
-                           symbol_size: None,
-                           data: SeriesDataSource::DatasetIndex(dataset_index),
-                           extra: Some(json!(
-                               {"encode": {"tooltip": [2,1], "x": 0, "y": 1 }}
-                           ))
-                       });
-                   }
-               }
-
-           }
+impl<X, Y>  EChartOptions<X,Y>
+where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
+    pub fn new_with_axis(x_axis:Axis<X>,y_axis: Axis<Y>) -> Self {
+        Self {
+            title: None,
+            tooltip: Some(Tooltip {
+                show: true,
+                show_delay: None,
+                hide_delay: None,
+                trigger: Some(TooltipTrigger::Item),
+                formatter: None,
+                axis_pointer: Some(AxisPointer {
+                    r#type: Some(AxisPointerType::Cross),
+                    snap: Some(false),
+                    animation: None,
+                    axis: None,
+                })
+            }),
+            legend: None, grid: None, extra: None, dataset: None,
+            x_axis,
+            y_axis,
+            series: Some(Vec::new()),
         }
-        self
     }
-
-
-    fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self,series_type: SeriesType, series_label:String, data: TData) -> Self {
-        self.options().series.as_mut().unwrap().push(
-            Series::new(series_label,series_type,data.into())
-        );
-        self
-    }
-
-    fn build(self, width: Size, height: Size) -> ScriptTemplate<X,Y>;
-}
-
-impl<X, Y>  EChartsOption<X,Y>
-where X: AxisKindMarker, Y: AxisKindMarker {
-
+    
     pub fn new() -> Self {
         Self {
             title: None,
@@ -242,21 +172,104 @@ where X: AxisKindMarker, Y: AxisKindMarker {
             series: Some(Vec::new()),
         }
     }
-}
 
-
-impl<X, Y> ChartBuilder<X, Y> for  EChartsOption<X, Y>
-where X: AxisKindMarker+Serialize , Y: AxisKindMarker+Serialize {
-    fn options(&mut self) -> &mut EChartsOption<X,Y> {
+    /// Set chart title
+    pub fn title_str(mut self, title: &str) -> Self {
+        let t =  self.title.get_or_insert_default();
+        t.left = Some(Position::Keyword(PositionKeyword::Center));
+        t.text = Some(title.to_string());
         self
     }
 
-    fn build(self, width: Size, height: Size) -> ScriptTemplate<X,Y>{
+    fn subtitle_str(mut self, subtitle: &str) -> Self {
+        self.title.get_or_insert_default().sub_text = Some(subtitle.to_string());
+        self
+    }
+
+    fn title(mut self, title: Title) -> Self {
+        self.title = Some(title);
+        self
+    }
+
+
+    fn x_axis_label(mut self, x: &str) -> Self {
+        self.x_axis.name = Some(x.to_string());
+        self
+    }
+
+    fn y_axis_label(mut self, y: &str) -> Self {
+        self.y_axis.name = Some(y.to_string());
+        self
+    }
+
+    //add a dataset and get an index
+    fn add_dataset<TData:Into<DatasetComponent<X,Y>>>(mut self, data: TData) -> usize {
+        let index = self.dataset.as_mut().unwrap().len();
+        self.dataset.as_mut().unwrap().push(data.into());
+        index
+    }
+
+    /// Add visualization for a dataset.
+    /// If no datasets exist, or dataset_index is out of range, no datasets will be added
+    fn add_dataset_visualisation(mut self, series_label:&str, series_type: SeriesType, dataset_index: usize) -> Self {
+        let datasets = &self.dataset;
+        if let Some(datasets) = datasets {
+            if let Some(dataset) =  datasets.get(dataset_index){
+                match dataset {
+                    DatasetComponent::Source(_) | DatasetComponent::Transform(_) => {
+                        self.series.as_mut().unwrap().push(Series {
+                            r#type: Some(series_type),
+                            name: Some(format!("{}", series_label)),
+                            smooth: Some(true),
+                            area_style: None,
+                            symbol: None,
+                            symbol_size: None,
+                            data: SeriesDataSource::DatasetIndex(dataset_index),
+                            extra: None
+                        });
+                    }
+                    DatasetComponent::LabelledSource(_) => {
+                        self.series.as_mut().unwrap().push(Series {
+                            r#type: Some(series_type),
+                            name: Some(format!("{}", series_label)),
+                            smooth: Some(true),
+                            area_style: None,
+                            symbol: None,
+                            symbol_size: None,
+                            data: SeriesDataSource::DatasetIndex(dataset_index),
+                            extra: Some(json!(
+                               {"encode": {"tooltip": [2,1], "x": 0, "y": 1 }}
+                           ))
+                        });
+                    }
+                }
+
+            }
+        }
+        self
+    }
+
+
+    pub fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self, series_type: SeriesType, series_label:String, data: TData) -> Self {
+        self.series.as_mut().unwrap().push(
+            Series::new(series_label,series_type,data.into())
+        );
+        self
+    }
+
+    pub fn build(self, width: Size, height: Size) -> ScriptTemplate<X,Y>{
         ScriptTemplate::new(Uuid::new_v4().to_string(), width, height, self)
     }
 }
 
 
-impl <X, Y> RegressionChartBuilder<X, Y> for EChartsOption<X, Y>
+
+impl <X, Y> RegressionChartBuilder<X, Y> for EChartOptions<X, Y>
 where X: AxisKindMarker<AxisType = ValueAxis> + Serialize, 
-      Y: AxisKindMarker<AxisType = ValueAxis> + Serialize{}
+      Y: AxisKindMarker<AxisType = ValueAxis> + Serialize{
+    
+    fn options(&mut self) -> &mut EChartOptions<X,Y> {
+        self
+    }
+    
+}

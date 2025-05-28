@@ -1,18 +1,15 @@
-
-
 mod common;
-
 use chrono::Month::{August, February, January, September};
 use sailfish::TemplateSimple;
-use apache_echarts_wrapper::ChartBuilder;
 use apache_echarts_wrapper::common::Size;
-use apache_echarts_wrapper::options::{EChartsOption, SeriesType};
+use apache_echarts_wrapper::EChartOptions;
+use apache_echarts_wrapper::options::SeriesType;
 use crate::common::show_page;
 
 #[cfg(feature = "chrono_axis")]
 #[test]
 fn test_chrono() {
-    let chart_month = EChartsOption::<chrono::Month,f64>::new()
+    let chart_month = EChartOptions::<chrono::Month,f64>::new()
         .title_str("Week test")
         .add_series(
             SeriesType::Bar,

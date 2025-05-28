@@ -1,6 +1,6 @@
 use apache_echarts_wrapper::common::Size;
-use apache_echarts_wrapper::options::{EChartsOption, SeriesType};
-use apache_echarts_wrapper::{ChartBuilder, RegressionChartBuilder};
+use apache_echarts_wrapper::options::{EChartOptions, SeriesType};
+use apache_echarts_wrapper::RegressionChartBuilder;
 use sailfish::TemplateSimple;
 
 
@@ -9,12 +9,12 @@ use crate::common::show_page;
 
 #[test]
 fn it_works() {
-    let chart = EChartsOption::<f64, &str>::new()
+    let chart = EChartOptions::<f64, &str>::new()
         .title_str("Something interesting")
         .add_series(
             SeriesType::Line,
             "fist_set".to_string(),
-            [(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
+            vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")] //you can use vectors or arrays
         )
         .add_series(
             SeriesType::Bar,
@@ -23,7 +23,7 @@ fn it_works() {
         )
         .build(Size::pixels(600),Size::pixels(400));
 
-    let numeric_chart = EChartsOption::<f64, f64>::new()
+    let numeric_chart = EChartOptions::<f64, f64>::new()
         .title_str("Something completely different")
         .add_linear_regression_series(
             "regression set2",

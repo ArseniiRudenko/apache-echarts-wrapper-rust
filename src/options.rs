@@ -7,7 +7,7 @@ use crate::common::Percent;
 /// Root object for ECharts configuration
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct EChartsOption<X:AxisKindMarker,Y:AxisKindMarker> {
+pub struct EChartOptions<X:AxisKindMarker,Y:AxisKindMarker> {
     /// Chart title options
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) title: Option<Title>,
@@ -305,14 +305,14 @@ pub struct  NamedValue<X:AxisKindMarker>{
 #[serde(rename_all = "camelCase")]
 pub struct Axis<T:AxisKindMarker> {
     /// Axis type: value, category, time, log
-    pub r#type: AxisType,
+    pub(crate) r#type: AxisType,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub inverse: Option<bool>,
+    pub(crate) inverse: Option<bool>,
 
     /// Axis name
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    pub(crate) name: Option<String>,
 
     /// Data for category axis
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -337,12 +337,23 @@ impl<T:AxisKindMarker> Default for Axis<T> {
 
 
 impl<T:AxisKindMarker> Axis<T>{
-    pub fn new(name: &str, is_log:bool)-> Self{
+
+    pub fn new_named(name: String)-> Self{
+        Self{
+            r#type:  T::AxisType::AXIS_TYPE,
+            name: Some(name),
+            inverse: None,
+            data: None,
+            extra: None
+        }
+    }
+
+    pub fn new(name: String, is_log:bool, inverse: bool)-> Self{
         if T::AxisType::AXIS_TYPE == AxisType::Value && is_log {
             Self{
                 r#type:  AxisType::Log,
-                name: Some(name.to_string()),
-                inverse: None,
+                name: Some(name),
+                inverse: Some(inverse),
                 data: None,
                 extra: None,
             }
@@ -350,7 +361,7 @@ impl<T:AxisKindMarker> Axis<T>{
             Self{
                 r#type:  T::AxisType::AXIS_TYPE,
                 name: Some(name.to_string()),
-                inverse: None,
+                inverse: Some(inverse),
                 data: None,
                 extra: None,
             }
@@ -384,10 +395,7 @@ pub enum SeriesType {
     Gauge,
     PictorialBar,
     ThemeRiver,
-    Custom,
-    /// For any unrecognized series type
-    #[serde(other)]
-    Unknown,
+    Custom
 }
 
 

@@ -1,6 +1,5 @@
 use apache_echarts_wrapper::common::Size;
-use apache_echarts_wrapper::options::{EChartsOption, SeriesType};
-use apache_echarts_wrapper::ChartBuilder;
+use apache_echarts_wrapper::options::{EChartOptions, SeriesType};
 use sailfish::TemplateSimple;
 use time::macros::{datetime, time};
 use time::Weekday::{Friday, Monday, Thursday, Tuesday};
@@ -11,7 +10,7 @@ use crate::common::show_page;
 #[cfg(feature = "time_axis")]
 #[test]
 fn time_test() {
-    let chart_week = EChartsOption::<f64, time::Weekday>::new()
+    let chart_week = EChartOptions::<f64, time::Weekday>::new()
         .title_str("Week test")
         .add_series(
             SeriesType::Line,
@@ -24,7 +23,7 @@ fn time_test() {
             vec![(2.0,Monday),(14.0,Thursday),(15.0,Thursday),(20.0,Monday)]
         )
         .build(Size::pixels(600),Size::pixels(400));
-    let chart_date_time = EChartsOption::<f64, time::UtcDateTime>::new()
+    let chart_date_time = EChartOptions::<f64, time::UtcDateTime>::new()
         .title_str("utc date time test")
         .add_series(
             SeriesType::Line,
@@ -49,7 +48,7 @@ fn time_test() {
         .build(Size::pixels(600),Size::pixels(400));
 
     
-    let chart_time_conf = EChartsOption::<f64, time::Time>::new()
+    let chart_time_conf = EChartOptions::<f64, time::Time>::new()
         .title_str("Time test")
         .add_series(
             SeriesType::Line,
