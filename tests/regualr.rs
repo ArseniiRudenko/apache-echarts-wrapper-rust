@@ -14,12 +14,12 @@ fn it_works() {
         .add_series(
             SeriesType::Line,
             "fist_set".to_string(),
-            vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
+            [(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")]
         )
         .add_series(
             SeriesType::Bar,
             "second_set".to_string(),
-            vec![(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
+            [(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
         )
         .build(Size::pixels(600),Size::pixels(400));
 
@@ -42,7 +42,7 @@ fn it_works() {
         )
         .add_linear_regression_series(
             "regression set",
-            vec![
+            [
                 (1.0,11.0),
                 (1.0,20.0),
                 (3.5,30.0),

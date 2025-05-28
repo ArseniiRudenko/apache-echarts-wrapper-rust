@@ -27,44 +27,6 @@ impl<'de> Deserialize<'de> for Percent {
 }
 
 
-
-impl From<i64> for Pixels{
-    fn from(value: i64) -> Self {
-        Pixels(value as usize)
-    }
-}
-
-impl From<usize> for Pixels{
-    fn from(value: usize) -> Self {
-        Pixels(value)
-    }
-}
-
-impl From<u32> for Pixels{
-    fn from(value: u32) -> Self {
-        Pixels(value as usize)
-    }
-}
-impl From<u16> for Pixels{
-    fn from(value: u16) -> Self {
-        Pixels(value as usize)
-    }
-}
-
-impl From<u8> for Pixels{
-    fn from(value: u8) -> Self {
-        Pixels(value as usize)
-    }
-}
-
-impl From<i32> for Pixels{
-    fn from(value: i32) -> Self {
-        Pixels(value as usize)
-    }
-}
-
-
-
 /// Newtype for percentage values, serialized as "{value}px"
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pixels(pub usize);
