@@ -177,15 +177,15 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
     }
 
     /// Set chart title
-    pub fn title_str(mut self, title: &str) -> Self {
+    pub fn title_str(mut self, title: String) -> Self {
         let t =  self.title.get_or_insert_default();
         t.left = Some(Position::Keyword(PositionKeyword::Center));
-        t.text = Some(title.to_string());
+        t.text = Some(title);
         self
     }
 
-    fn subtitle_str(mut self, subtitle: &str) -> Self {
-        self.title.get_or_insert_default().sub_text = Some(subtitle.to_string());
+    fn subtitle_str(mut self, subtitle: String) -> Self {
+        self.title.get_or_insert_default().sub_text = Some(subtitle);
         self
     }
 
@@ -195,13 +195,13 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
     }
 
 
-    fn x_axis_label(mut self, x: &str) -> Self {
-        self.x_axis.name = Some(x.to_string());
+    fn x_axis_label(mut self, x: String) -> Self {
+        self.x_axis.name = Some(x);
         self
     }
 
-    fn y_axis_label(mut self, y: &str) -> Self {
-        self.y_axis.name = Some(y.to_string());
+    fn y_axis_label(mut self, y: String) -> Self {
+        self.y_axis.name = Some(y);
         self
     }
 
@@ -214,7 +214,7 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
 
     /// Add visualization for a dataset.
     /// If no datasets exist, or dataset_index is out of range, no datasets will be added
-    fn add_dataset_visualisation(mut self, series_label:&str, series_type: SeriesType, dataset_index: usize) -> Self {
+    fn add_dataset_visualisation(mut self, series_label:String, series_type: SeriesType, dataset_index: usize) -> Self {
         let datasets = &self.dataset;
         if let Some(datasets) = datasets {
             if let Some(dataset) =  datasets.get(dataset_index){
@@ -222,7 +222,7 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
                     DatasetComponent::Source(_) | DatasetComponent::Transform(_) => {
                         self.series.as_mut().unwrap().push(Series {
                             r#type: Some(series_type),
-                            name: Some(format!("{}", series_label)),
+                            name: Some(series_label),
                             smooth: Some(true),
                             area_style: None,
                             symbol: None,
@@ -234,7 +234,7 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
                     DatasetComponent::LabelledSource(_) => {
                         self.series.as_mut().unwrap().push(Series {
                             r#type: Some(series_type),
-                            name: Some(format!("{}", series_label)),
+                            name: Some(series_label),
                             smooth: Some(true),
                             area_style: None,
                             symbol: None,

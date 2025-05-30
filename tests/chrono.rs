@@ -10,7 +10,7 @@ use crate::common::show_page;
 #[test]
 fn test_chrono() {
     let chart_month = EChartOptions::<chrono::Month,f64>::default()
-        .title_str("Week test")
+        .title_str("Week test".to_string())
         .add_series(
             SeriesType::Bar,
             "lbl".to_string(),

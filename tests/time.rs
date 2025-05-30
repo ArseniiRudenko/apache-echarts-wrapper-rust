@@ -3,7 +3,7 @@ use apache_echarts_wrapper::options::{EChartOptions, SeriesType};
 use sailfish::TemplateSimple;
 use time::macros::{datetime, time};
 use time::Weekday::{Friday, Monday, Thursday, Tuesday};
-use time::UtcDateTime;
+
 
 mod common;
 use crate::common::show_page;
@@ -11,7 +11,7 @@ use crate::common::show_page;
 #[test]
 fn time_test() {
     let chart_week = EChartOptions::<f64, time::Weekday>::default()
-        .title_str("Week test")
+        .title_str("Week test".to_string())
         .add_series(
             SeriesType::Line,
             "fist_set".to_string(),
@@ -24,12 +24,12 @@ fn time_test() {
         )
         .build(Size::pixels(600),Size::pixels(400));
     let chart_date_time = EChartOptions::<f64, time::UtcDateTime>::default()
-        .title_str("utc date time test")
+        .title_str("utc date time test".to_string())
         .add_series(
             SeriesType::Line,
             "fist_set".to_string(),
             vec![
-                (12.5,UtcDateTime::now()),
+                (12.5,time::UtcDateTime::now()),
                 (14.0,datetime!(2025-01-01 12:00 UTC).into()),
                 (15.0,datetime!(2024-01-01 12:00 UTC).into()),
                 (10.0,datetime!(2023-01-01 12:00 UTC).into())
@@ -49,7 +49,7 @@ fn time_test() {
 
 
     let chart_time_conf = EChartOptions::<f64, time::Time>::default()
-        .title_str("Time test")
+        .title_str("Time test".to_string())
         .add_series(
             SeriesType::Line,
             "fist_set".to_string(),
