@@ -648,6 +648,18 @@ impl<X:AxisKindMarker,Y:AxisKindMarker> From<Vec<(X,Y)>> for DatasetComponent<X,
     }
 }
 
+
+impl<const N:usize,X:AxisKindMarker,Y:AxisKindMarker>  From<[(X,Y,String);N]> for DatasetComponent<X,Y>
+{
+    fn from(value: [(X,Y,String);N] ) -> Self {
+        Self::LabelledSource(
+            LabelledSource{
+                source: value.into_iter().map(|(x,y,label)| (x.into(),y.into(),label)).collect()
+            }
+        )
+    }
+}
+
 impl<X:AxisKindMarker,Y:AxisKindMarker> From<Vec<(X,Y,String)>> for DatasetComponent<X,Y>
 {
     fn from(value: Vec<(X, Y, String)>) -> Self {
