@@ -14,7 +14,7 @@ fn time_test() {
         .title_str("Week test".to_string())
         .add_series(
             SeriesType::Line,
-            "fist_set".to_string(),
+            "first_set".to_string(),
             vec![(12.5,Monday),(14.0,Tuesday),(15.0,Thursday),(10.0,Friday)]
         )
         .add_series(

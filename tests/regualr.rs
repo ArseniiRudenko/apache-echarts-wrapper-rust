@@ -13,7 +13,7 @@ fn it_works() {
         .title_str("Something interesting".to_string())
         .add_series(
             SeriesType::Line,
-            "fist_set".to_string(),
+            "first_set".to_string(),
             vec![(12.5,"First"),(14.0,"Second"),(15.0,"Third"),(10.0,"Fourth")] //you can use vectors or arrays
         )
         .add_series(
