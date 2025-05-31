@@ -5,7 +5,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Newtype for percentage values, serialized as "{value}%"
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Percent(pub f64);
+pub struct Percent(pub f32);
 
 impl Serialize for Percent {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -20,7 +20,7 @@ impl<'de> Deserialize<'de> for Percent {
     where D: Deserializer<'de> {
         let s = String::deserialize(deserializer)?;
         let trimmed = s.trim_end_matches('%');
-        trimmed.parse::<f64>()
+        trimmed.parse::<f32>()
             .map(Percent)
             .map_err(serde::de::Error::custom)
     }
@@ -29,7 +29,7 @@ impl<'de> Deserialize<'de> for Percent {
 
 /// Newtype for percentage values, serialized as "{value}px"
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Pixels(pub i64);
+pub struct Pixels(pub usize);
 
 impl Serialize for Pixels {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -44,7 +44,7 @@ impl<'de> Deserialize<'de> for Pixels {
     where D: Deserializer<'de> {
         let s = String::deserialize(deserializer)?;
         let trimmed = s.trim_end_matches("px");
-        trimmed.parse::<i64>()
+        trimmed.parse::<usize>()
             .map(Pixels)
             .map_err(serde::de::Error::custom)
     }
@@ -74,11 +74,11 @@ impl Size{
         }
     }
 
-    pub fn percent(f: f64) -> Self{
+    pub fn percent(f: f32) -> Self{
         Size::Percent(Percent(f))
     }
 
-    pub fn pixels(f: i64) -> Self{
+    pub fn pixels(f: usize) -> Self{
         Size::Pixel(Pixels(f))
     }
 
