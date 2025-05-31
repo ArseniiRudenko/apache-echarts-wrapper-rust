@@ -5,6 +5,8 @@ use crate::templates::ScriptTemplate;
 use serde::Serialize;
 use serde_json::json;
 use uuid::Uuid;
+use crate::common;
+use crate::options::Position::Percent;
 
 ///trait that provides regression methods that are only supported when both x and y are numeric
 pub trait RegressionChartBuilder<X, Y>: Sized
@@ -174,6 +176,48 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
             y_axis,
             series: Some(Vec::new()),
         }
+    }
+    
+    
+    pub fn enable_legend(mut self) -> Self{
+        if self.legend.is_none(){
+            self.legend = Some(Legend{
+                data: None,
+                orient: Some("vertical".to_string()),
+                left: None,
+                right: Some(Percent(common::Percent(0.0))),
+                top: Some(Percent(common::Percent(20.0))),
+                bottom: Some(Percent(common::Percent(20.0)))
+            })
+        }else { 
+            let mut legend = self.legend.unwrap();
+            legend.right = Some(Percent(common::Percent(0.0)));
+            legend.top = Some(Percent(common::Percent(20.0)));
+            legend.bottom = Some(Percent(common::Percent(20.0)));
+            legend.orient = Some("vertical".to_string());
+            self.legend = Some(legend);
+        }
+        if self.grid.is_none(){
+            self.grid = Some( Grid{
+                left: None,
+                right: Some(Percent(common::Percent(20.0))),
+                top: None,
+                bottom: None,
+                contain_label: None,
+                background_color: None,
+                border_color: None,
+                border_width: None,
+                show: None,
+                z: None,
+                zlevel: None,
+                extra: None,
+            })
+        }else { 
+            let mut grid = self.grid.unwrap();
+            grid.right = Some(Percent(common::Percent(20.0)));
+            self.grid = Some(grid);
+        }
+        self
     }
 
     /// Set chart title
