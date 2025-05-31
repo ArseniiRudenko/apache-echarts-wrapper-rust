@@ -189,7 +189,7 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
                 top: Some(Percent(common::Percent(20.0))),
                 bottom: Some(Percent(common::Percent(20.0)))
             })
-        }else { 
+        }else {
             let mut legend = self.legend.unwrap();
             legend.right = Some(Percent(common::Percent(0.0)));
             legend.top = Some(Percent(common::Percent(20.0)));
@@ -212,7 +212,7 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
                 zlevel: None,
                 extra: None,
             })
-        }else { 
+        }else {
             let mut grid = self.grid.unwrap();
             grid.right = Some(Percent(common::Percent(20.0)));
             self.grid = Some(grid);
@@ -228,29 +228,29 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
         self
     }
 
-    fn subtitle_str(mut self, subtitle: String) -> Self {
+    pub  fn subtitle_str(mut self, subtitle: String) -> Self {
         self.title.get_or_insert_default().sub_text = Some(subtitle);
         self
     }
 
-    fn title(mut self, title: Title) -> Self {
+    pub  fn title(mut self, title: Title) -> Self {
         self.title = Some(title);
         self
     }
 
 
-    fn x_axis_label(mut self, x: String) -> Self {
+    pub  fn x_axis_label(mut self, x: String) -> Self {
         self.x_axis.name = Some(x);
         self
     }
 
-    fn y_axis_label(mut self, y: String) -> Self {
+    pub fn y_axis_label(mut self, y: String) -> Self {
         self.y_axis.name = Some(y);
         self
     }
 
     //add a dataset and get an index
-    fn add_dataset<TData:Into<DatasetComponent<X,Y>>>(mut self, data: TData) -> usize {
+    pub fn add_dataset<TData:Into<DatasetComponent<X,Y>>>(mut self, data: TData) -> usize {
         let index = self.dataset.as_mut().unwrap().len();
         self.dataset.as_mut().unwrap().push(data.into());
         index
@@ -258,7 +258,7 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
 
     /// Add visualization for a dataset.
     /// If no datasets exist, or dataset_index is out of range, no datasets will be added
-    fn add_dataset_visualisation(mut self, series_label:String, series_type: SeriesType, dataset_index: usize) -> Self {
+    pub fn add_dataset_visualisation(mut self, series_label:String, series_type: SeriesType, dataset_index: usize) -> Self {
         let datasets = &self.dataset;
         if let Some(datasets) = datasets {
             if let Some(dataset) =  datasets.get(dataset_index){

@@ -39,7 +39,7 @@ impl SerializeFormat<OffsetDateTime> for OffsetDateTime{
     where
         S: Serializer
     {
-        (value.unix_timestamp_nanos()/ 10000000).serialize(serializer)
+        (value.unix_timestamp_nanos()/ 1000000).serialize(serializer)
     }
 }
 
@@ -53,7 +53,7 @@ impl SerializeFormat<time::PrimitiveDateTime> for time::PrimitiveDateTime{
     where
         S: Serializer
     {
-        (value.as_utc().unix_timestamp_nanos() / 10000000).serialize(serializer)
+        (value.as_utc().unix_timestamp_nanos() / 1000000).serialize(serializer)
     }
 }
 
@@ -83,7 +83,7 @@ impl SerializeFormat<time::Date> for time::Date{
     where
         S: Serializer
     {
-        (value.midnight().as_utc().unix_timestamp_nanos() / 10000000).serialize(serializer)
+        (value.midnight().as_utc().unix_timestamp_nanos() / 1000000).serialize(serializer)
     }
 }
 
