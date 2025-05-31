@@ -106,7 +106,7 @@ pub struct Title {
 }
 
 impl Title {
-    pub(crate) fn new(text: &str) -> Title {
+    pub fn new(text: &str) -> Title {
         Self{
             text: Some(text.to_string()),
             sub_text: None,
@@ -260,10 +260,29 @@ pub struct Legend {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub left: Option<Position>,
 
-    /// Additional raw legend options
-    #[serde(flatten)]
-    pub extra: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub right: Option<Position>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub top: Option<Position>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bottom: Option<Position>
 }
+
+impl Default for Legend {
+    fn default() -> Self {
+        Self{
+            data: None,
+            orient: None,
+            left: None,
+            right:  None,
+            top:  None,
+            bottom: None,
+        }
+    }
+}
+
 
 /// Axis types supported by ECharts
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -791,7 +810,7 @@ pub struct RegressionConfig {
     /// Regression method
     pub method: RegressionMethod,
 
-    /// Polynomial order (only used when method is Polynomial)
+    /// Polynomial order (only used when the method is Polynomial)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order: Option<u8>,
 

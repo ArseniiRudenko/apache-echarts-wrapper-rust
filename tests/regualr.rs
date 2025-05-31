@@ -20,7 +20,7 @@ fn it_works() {
             SeriesType::Bar,
             "second_set".to_string(),
             [(2.0,"First"),(14.0,"Third"),(15.0,"Third"),(20.0,"First")]
-        )
+        ).enable_legend()
         .build(Size::pixels(600),Size::pixels(400));
 
     let numeric_chart = EChartOptions::<f64, f64>::default()
