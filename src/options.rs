@@ -244,6 +244,13 @@ pub struct Tooltip {
 
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum LegendOrient {
+    Horizontal,
+    Vertical
+}
+
 /// Legend component
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -254,7 +261,7 @@ pub struct Legend {
 
     /// Legend orientation: vertical or horizontal
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub orient: Option<String>,
+    pub orient: Option<LegendOrient>,
 
     /// Left position (Keyword, numeric px, percent, or other)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -555,10 +562,11 @@ pub struct Series<X:AxisKindMarker,Y:AxisKindMarker> {
     pub data: SeriesDataSource<X,Y>,
 
     /// if showSymbol is false symbol will still show on hover
+    /// if the tooltip trigger is an axis
     #[serde(skip_serializing_if = "Option::is_none")]
     pub show_symbol: Option<bool>,
 
-    ///if show symbol is none, line won't react on hover anymore
+    ///if the show symbol is none, line won't react on hover anymore
     #[serde(skip_serializing_if = "Option::is_none")]
     pub symbol: Option<DataPointSymbol>,
 
