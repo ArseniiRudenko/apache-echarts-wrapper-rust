@@ -296,6 +296,12 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
         self
     }
 
+    pub fn add_series_direct(mut self, series:Series<X,Y>) -> Self {
+        self.series.as_mut().unwrap().push(series);
+        self
+    }
+
+
 
     pub fn add_series<TData:Into<SeriesDataSource<X,Y>>>(mut self, series_type: SeriesType, series_label:String, data: TData) -> Self {
         self.series.as_mut().unwrap().push(
