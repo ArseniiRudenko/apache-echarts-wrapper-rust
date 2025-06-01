@@ -84,6 +84,7 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
             smooth: None,
             area_style: None,
             data: SeriesDataSource::DatasetIndex(source_index),
+            show_symbol: None,
             symbol: Some(DataPointSymbol::Circle),
             symbol_size: Some(8),
             extra: None,
@@ -96,6 +97,7 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
             smooth: Some(true),
             area_style: None,
             data: SeriesDataSource::DatasetIndex(transform_index),
+            show_symbol: None,
             symbol: Some(DataPointSymbol::None),
             symbol_size: None,
             extra: None
@@ -272,7 +274,8 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
                             symbol: None,
                             symbol_size: None,
                             data: SeriesDataSource::DatasetIndex(dataset_index),
-                            extra: None
+                            extra: None,
+                            show_symbol: None,
                         });
                     }
                     DatasetComponent::LabelledSource(_) => {
@@ -286,7 +289,8 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
                             data: SeriesDataSource::DatasetIndex(dataset_index),
                             extra: Some(json!(
                                {"encode": {"tooltip": [2,1], "x": 0, "y": 1 }}
-                           ))
+                           )),
+                            show_symbol: None,
                         });
                     }
                 }
