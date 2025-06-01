@@ -554,6 +554,11 @@ pub struct Series<X:AxisKindMarker,Y:AxisKindMarker> {
     #[serde(flatten)]
     pub data: SeriesDataSource<X,Y>,
 
+    /// if showSymbol is false symbol will still show on hover
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub show_symbol: Option<bool>,
+
+    ///if show symbol is none, line won't react on hover anymore
     #[serde(skip_serializing_if = "Option::is_none")]
     pub symbol: Option<DataPointSymbol>,
 
@@ -573,6 +578,7 @@ impl<X:AxisKindMarker,Y:AxisKindMarker> Series <X,Y>{
             smooth: None,
             area_style: None,
             data,
+            show_symbol: None,
             symbol: None,
             symbol_size: None,
             extra: None,
