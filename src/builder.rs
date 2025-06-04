@@ -185,7 +185,7 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
         if self.legend.is_none(){
             self.legend = Some(Legend{
                 data: None,
-                orient: Some("vertical".to_string()),
+                orient: Some(LegendOrient::Vertical),
                 left: None,
                 right: Some(Percent(common::Percent(0.0))),
                 top: Some(Percent(common::Percent(20.0))),
@@ -196,7 +196,7 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
             legend.right = Some(Percent(common::Percent(0.0)));
             legend.top = Some(Percent(common::Percent(20.0)));
             legend.bottom = Some(Percent(common::Percent(20.0)));
-            legend.orient = Some("vertical".to_string());
+            legend.orient = Some(LegendOrient::Vertical);
             self.legend = Some(legend);
         }
         if self.grid.is_none(){
