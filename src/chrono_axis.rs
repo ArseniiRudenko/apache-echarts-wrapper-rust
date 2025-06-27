@@ -3,6 +3,11 @@ use chrono::{DateTime, TimeZone, Weekday};
 use serde::{Serialize, Serializer};
 
 
+use crate::impl_default_marker_self;
+
+impl_default_marker_self!(CategoryAxis for Weekday chrono::Month);
+
+
 impl<T:TimeZone> SerializeFormat<DateTime<T>> for DateTime<T>{
     fn serialize<S>(value: &DateTime<T>, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -41,11 +46,6 @@ impl SerializeFormat<chrono::Month> for chrono::Month{
     }
 }
 
-impl AxisKindMarker for chrono::Month{
-    type AxisType = CategoryAxis;
-    type Serialization  = Self;
-}
-
 impl SerializeFormat<Weekday> for Weekday{
     fn serialize<S>(value: &Weekday, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -55,7 +55,3 @@ impl SerializeFormat<Weekday> for Weekday{
     }
 }
 
-impl AxisKindMarker for Weekday{
-    type AxisType = CategoryAxis;
-    type Serialization  = Self;
-}

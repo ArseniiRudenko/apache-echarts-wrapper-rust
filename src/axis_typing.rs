@@ -66,74 +66,8 @@ pub trait AxisKindMarker {
         Self: Sized;
 }
 
-impl AxisKindMarker for u128 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-impl AxisKindMarker for i32 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
+use crate::impl_default_marker;
 
-impl AxisKindMarker for u32 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
+impl_default_marker!(ValueAxis for u128 i128 i32 u32 i64 u64 i16 u16 i8 u8 f32 f64 usize isize);
 
-impl AxisKindMarker for i64 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl AxisKindMarker for u64 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl AxisKindMarker for i16 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-impl AxisKindMarker for u16 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl AxisKindMarker for i8 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl AxisKindMarker for u8 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl AxisKindMarker for f32 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl AxisKindMarker for f64 {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl AxisKindMarker for usize {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-impl AxisKindMarker for isize {
-    type AxisType = ValueAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl AxisKindMarker for String {
-    type AxisType = CategoryAxis;
-    type Serialization = DefaultSerialisation;
-}
-
-impl<'a> AxisKindMarker for &'a str {
-    type AxisType = CategoryAxis;
-    type Serialization = DefaultSerialisation;
-}
+impl_default_marker!(CategoryAxis for String &str);

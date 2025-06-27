@@ -1,5 +1,6 @@
 pub mod options;
 mod builder;
+mod macros;
 pub mod templates;
 pub mod common;
 
@@ -13,5 +14,4 @@ mod chrono_axis;
 pub use builder::RegressionChartBuilder;
 pub use axis_typing::{AxisKindMarker,TimeAxis,CategoryAxis,ValueAxis};
 pub use options::EChartOptions;
-
 
