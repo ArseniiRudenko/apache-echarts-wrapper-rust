@@ -3,6 +3,13 @@ use serde::ser::Error;
 use serde::{Serialize, Serializer};
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcDateTime};
+use crate::impl_default_marker;
+use crate::impl_default_marker_self;
+
+impl_default_marker!(CategoryAxis for  time::Month);
+impl_default_marker_self!(CategoryAxis for  time::Weekday time::Time);
+impl_default_marker_self!(TimeAxis for  OffsetDateTime time::PrimitiveDateTime UtcDateTime time::Date);
+
 
 impl<T: serde::Serialize + ?Sized + ToString> SerializeFormat<T> for time::Weekday{
     fn serialize<S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
@@ -22,18 +29,6 @@ impl<T: serde::Serialize + ?Sized + ToString> SerializeFormat<T> for time::Month
     }
 }
 
-
-impl AxisKindMarker for time::Weekday{
-    type AxisType = CategoryAxis;
-    type Serialization = Self;
-    
-}
-
-impl AxisKindMarker for time::Month{
-    type AxisType = CategoryAxis;
-    type Serialization = DefaultSerialisation;
-}
-
 impl SerializeFormat<OffsetDateTime> for OffsetDateTime{
     fn serialize<S>(value: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -43,10 +38,6 @@ impl SerializeFormat<OffsetDateTime> for OffsetDateTime{
     }
 }
 
-impl AxisKindMarker for OffsetDateTime{
-    type AxisType = TimeAxis;
-    type Serialization = Self;
-}
 
 impl SerializeFormat<time::PrimitiveDateTime> for time::PrimitiveDateTime{
     fn serialize<S>(value: &time::PrimitiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
@@ -55,11 +46,6 @@ impl SerializeFormat<time::PrimitiveDateTime> for time::PrimitiveDateTime{
     {
         (value.as_utc().unix_timestamp_nanos() / 1000000).serialize(serializer)
     }
-}
-
-impl AxisKindMarker for time::PrimitiveDateTime{
-    type AxisType = TimeAxis;
-    type Serialization = Self;
 }
 
 
@@ -73,11 +59,6 @@ impl SerializeFormat<UtcDateTime> for UtcDateTime{
 }
 
 
-impl AxisKindMarker for UtcDateTime{
-    type AxisType = TimeAxis;
-    type Serialization = Self;
-}
-
 impl SerializeFormat<time::Date> for time::Date{
     fn serialize<S>(value: &time::Date, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -87,10 +68,6 @@ impl SerializeFormat<time::Date> for time::Date{
     }
 }
 
-impl AxisKindMarker for time::Date {
-    type AxisType = TimeAxis;
-    type Serialization = Self;
-}
 
 impl SerializeFormat<time::Time> for time::Time{
     fn serialize<S>(value: &time::Time, serializer: S) -> Result<S::Ok, S::Error>
@@ -104,8 +81,3 @@ impl SerializeFormat<time::Time> for time::Time{
     }
 }
 
-impl AxisKindMarker for time::Time{
-    type AxisType = CategoryAxis;
-    type Serialization = Self;
-    
-}
