@@ -9,14 +9,10 @@ use crate::common;
 use crate::options::Position::Percent;
 
 ///trait that provides regression methods that are only supported when both x and y are numeric
-pub trait RegressionChartBuilder<X, Y>: Sized
-where X: AxisKindMarker<AxisType=ValueAxis>,
-      Y: AxisKindMarker<AxisType=ValueAxis>,
-      EChartOptions<X,Y>:Serialize
-
+impl<X, Y>  EChartOptions<X,Y>
+where X: AxisKindMarker<AxisType=ValueAxis>+ Serialize,
+      Y: AxisKindMarker<AxisType=ValueAxis>+ Serialize,
 {
-    fn options(&mut self) -> &mut EChartOptions<X,Y>;
-    
     
     fn add_linear_regression_dataset(self, data_source_index: usize) -> usize {
         self.add_regression_dataset(data_source_index, RegressionMethod::Linear, None)
@@ -31,14 +27,14 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
     }
 
     fn add_regression_dataset(mut self, data_source_index: usize, method: RegressionMethod, order: Option<u8>) -> usize {
-        let index = self.options().dataset.as_mut().unwrap().len();
+        let index = self.dataset.as_mut().unwrap().len();
         let regression_config = RegressionConfig {
             method: method.clone(),
             order,
             extra: None,
         };
         let dataset = DatasetTransform::regression(regression_config);
-        self.options().dataset.as_mut().unwrap().push(DatasetComponent::tr(dataset, data_source_index));
+        self.dataset.as_mut().unwrap().push(DatasetComponent::tr(dataset, data_source_index));
         index
     }
 
@@ -47,12 +43,12 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
     fn add_regression_series<TData: Into<DatasetComponent<X,Y>>>(mut self, series_label: &str, data: TData,
                              method: RegressionMethod, order: Option<u8>) -> Self {
         // Create a dataset vector if it doesn't exist
-        if self.options().dataset.is_none() {
-            self.options().dataset = Some(Vec::new());
+        if self.dataset.is_none() {
+            self.dataset = Some(Vec::new());
         }
 
         // Add source dataset
-        let datasets = self.options().dataset.as_mut().unwrap();
+        let datasets = self.dataset.as_mut().unwrap();
         let source_index = datasets.len();
         datasets.push(data.into());
 
@@ -78,7 +74,7 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
         );
 
         // Add scatter series for original data
-        self.options().series.as_mut().unwrap().push(Series {
+        self.series.as_mut().unwrap().push(Series {
             r#type: Some(SeriesType::Scatter),
             name: Some(format!("{} (data)", series_label)),
             smooth: None,
@@ -91,7 +87,7 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
         });
 
         // Add line series for regression
-        self.options().series.as_mut().unwrap().push(Series {
+        self.series.as_mut().unwrap().push(Series {
             r#type: Some(SeriesType::Line),
             name: Some(format!("{} (regression)", series_label)),
             smooth: Some(true),
@@ -107,7 +103,7 @@ where X: AxisKindMarker<AxisType=ValueAxis>,
     }
 
     /// Add a linear regression dataset
-    fn add_linear_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData) -> Self {
+    pub fn add_linear_regression_series<TData:Into<DatasetComponent<X,Y>>>(self, series_label: &str, data: TData) -> Self {
         self.add_regression_series(series_label, data, RegressionMethod::Linear, None)
     }
 
@@ -317,16 +313,4 @@ where X: AxisKindMarker, Y: AxisKindMarker, EChartOptions<X,Y>:Serialize {
     pub fn build(self, width: Size, height: Size) -> ScriptTemplate<X,Y>{
         ScriptTemplate::new(Uuid::new_v4().to_string(), width, height, self)
     }
-}
-
-
-
-impl <X, Y> RegressionChartBuilder<X, Y> for EChartOptions<X, Y>
-where X: AxisKindMarker<AxisType = ValueAxis> + Serialize, 
-      Y: AxisKindMarker<AxisType = ValueAxis> + Serialize{
-    
-    fn options(&mut self) -> &mut EChartOptions<X,Y> {
-        self
-    }
-    
 }
