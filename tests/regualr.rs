@@ -1,6 +1,5 @@
 use apache_echarts_wrapper::common::Size;
 use apache_echarts_wrapper::options::{EChartOptions, SeriesType};
-use apache_echarts_wrapper::RegressionChartBuilder;
 use sailfish::TemplateSimple;
 
 
