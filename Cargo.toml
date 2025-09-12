@@ -18,11 +18,11 @@ chrono_axis= ["chrono"]
 
 [dependencies]
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-sailfish = { version = "0.9.0", features = ["derive", "json"] }
-uuid = { version = "1.17.0", features = ["v4"] }
+serde_json = "1.0.143"
+sailfish = { version = "0.10.0", features = ["derive", "json"] }
+uuid = { version = "1.18.1", features = ["v4"] }
 time = { version = "0.3", features = ["serde"] , optional = true }
-chrono = { version = "0.4.41", features = ["serde"], optional = true }
+chrono = { version = "0.4.42", features = ["serde"], optional = true }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
