@@ -44,4 +44,4 @@ If that is not enough for your needs, and you need more control, you can just di
 EChartsOption object into JSON using [serde](https://serde.rs/).
 It will result in a valid [option](https://echarts.apache.org/en/option.html#title) object.
 
-For more examples see tests in the lib.rs file.
+For more examples see tests in tests folder.
